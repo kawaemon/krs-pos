@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>5E_レジ</title>
+		<style>
+            @media (min-width: 600px) {
+                #parent {
+                    display: flex;
+                }
+
+                #child1 {
+                    flex-grow: 1;
+					margin:10px;
+					border: 2px solid black;
+					height: 600px;
+					width: 600px;
+					font-size:20px;
+                	padding:5px 
+      				}
+      			#child2 {
+        			flex-grow: 1;
+      			}
+                .num_change {
+                    height: 50px;
+                    width: 50px;
+                    background-color: white;
+                }
+                .button {
+					height:50px;
+					width:250px;
+					margin-bottom:2px;
+					background-color:white;
+                }
+                .button_big {
+                    height: 50px;
+                    width: 500px;
+                    margin-bottom: 2px;
+                    background-color: white;
+                }
+    		}
+		</style>
+		<script>
+            let counter, btnAdd;
+            let n;
+
+            function addCount() {
+                n++;
+                counter.innerHTML = n;
+			}
+            function decCount() {
+				n--;
+				if (n < 0) { n = 0 };
+                counter.innerHTML = n;
+            }
+
+            window.addEventListener("load", () => {
+                // 起動時の処理
+                counter = document.getElementById("counter");
+				btnAdd = document.getElementById("btnAdd");
+                btnDec = document.getElementById("btnDec");
+                n = 0;
+                btnAdd.addEventListener("click", addCount);
+                btnDec.addEventListener("click", decCount);
+            });
+
+			function sel(x) {
+				target = document.getElementById(x);
+				if (target.style.backgroundColor != "red") {
+					target.style.backgroundColor = "red";
+				} else {
+                    target.style.backgroundColor = "white";
+                }
+			}
+			function add() {
+				target = document.getElementById("eye").style.backgroundColor;
+			}
+			function reset() {
+			}
+		</script>
+	</head>
+	<body>	
+		<div id="parent">
+			<div  id="child1">
+			a
+			</div>
+			<div id="child2">
+				<center>
+					<h3>個数</h3>
+					<input class="num_change" type="button" id="btnDec" value="-">
+					<span id="counter">0</span>
+					<input class="num_change" type="button" id="btnAdd" value="+">
+				</center>
+				</br>
+				<center>
+					<h3>トッピング</h3>
+				</center>
+				<button id="eye" class="button" onclick="sel('eye')">目玉焼き</button>
+				<button id="cheese" class="button" onclick="sel('cheese')">チーズ</button>
+				</br>
+				<button id="mas" class="button" onclick="sel('mas')">からしマヨネーズ</button>
+				</br>
+				<center>
+					<h3>抜き</h3>
+				</center>
+				<button id="mayo_no" class="button" onclick="sel('mayo_no')">マヨネーズ抜き</button>
+				<button id="source_no" class="button" onclick="sel('source_no')">ソース抜き</button>
+				</br>
+				<button id="katuo_no" class="button" onclick="sel('katuo_no')">かつお節抜き</button>
+				<button id="nori_no" class="button" onclick="sel('nori_no')">青のり抜き</button>
+				</br>
+				<center>
+					<h3>操作</h3>
+				</center>
+				<button id="add" class="button_big" onclick="add()">追加</button>
+				</br>
+				<button id="one_back" class="button" onclick="one_back()">１個消去</button>
+				<button id="reset" class="button" onclick="reset()">全消去</button>
+				</br>
+				<button id="submit" class="button_big" onclick="submit()">確定</button>
+
+			</div>
+		</div>
+	</body>
+</html>
