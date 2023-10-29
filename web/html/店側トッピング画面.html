@@ -12,13 +12,13 @@
 
                 #child1 {
                     flex-grow: 1;
-					margin:10px;
-					border: 2px solid black;
-					height: 600px;
-					width: 600px;
-					font-size:20px;
-                	padding:5px 
-      				}
+                    margin: 10px;
+                    border: 2px solid black;
+                    height: 600px;
+                    width: 600px;
+                    font-size: 20px;
+                    padding: 5px;
+                }
       			#child2 {
         			flex-grow: 1;
       			}
@@ -39,11 +39,25 @@
                     margin-bottom: 2px;
                     background-color: white;
                 }
+                .indent {
+                    text-indent: 1rem;
+                    padding-left: 1em;
+                }
+                .right {
+                    justify-content: flex-end;
+                }
+				.font_num {
+					font-size:xx-large;
+				}
     		}
 		</style>
 		<script>
             let counter, btnAdd;
             let n;
+			var j=0;
+			const option=["eye","cheese","mas","mayo_no","source_no","katuo_no","nori_no"];
+			const option_name=["<span class='indent'>目玉焼き</span><span class='right'>50円</span></br>","<span class='indent'>チーズ</br></span>","<span class='indent'>からしマヨネーズ</br></span>","<span class='indent'>マヨネーズ抜き</br></span>","<span class='indent'>ソース抜き</br></span>","<span class='indent'>かつお節抜き</br></span>","<span class='indent'>青のり抜き</br></span>"]
+			const order_option=[];
 
             function addCount() {
                 n++;
@@ -74,22 +88,53 @@
                 }
 			}
 			function add() {
-				target = document.getElementById("eye").style.backgroundColor;
+				
+				var option_name_total = '箸巻き'+n+'個</br>';
+				if(j<5){
+					j++;
+				}
+				for (let i=0;i< 7;i++){
+					order_option[i] = document.getElementById(option[i]).style.backgroundColor;
+					if(order_option[i] == "red"){
+						option_name_total=option_name_total+option_name[i];
+					}
+				}
+				var order_order_num="order"+j;
+				let order = document.getElementById(order_order_num);
+				order.innerHTML = option_name_total;
+				option_name_total="";
 			}
-			function reset() {
+			function one_back() {
+				if(j>0){ 
+					var order_order_num="order"+j;
+					let order = document.getElementById(order_order_num);
+					order.innerHTML = "";
+					j--;
+				}	
+			}
+			function reset(){
+				for (j;j>0;j--){
+					var order_order_num="order"+j;
+					let order = document.getElementById(order_order_num);
+					order.innerHTML = "";
+				}
 			}
 		</script>
 	</head>
 	<body>	
 		<div id="parent">
-			<div  id="child1">
-			a
+			<div id="child1">
+				<p id="order1" ></p>
+				<p id="order2"></p>
+				<p id="order3"></p>
+				<p id="order4"></p>
+				<p id="order5"></p>
 			</div>
 			<div id="child2">
 				<center>
 					<h3>個数</h3>
 					<input class="num_change" type="button" id="btnDec" value="-">
-					<span id="counter">0</span>
+					<span id="counter" class="font_num">0</span>
 					<input class="num_change" type="button" id="btnAdd" value="+">
 				</center>
 				</br>
