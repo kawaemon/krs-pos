@@ -1,27 +1,25 @@
 <!DOCTYPE html>
 <html lang="ja">
-<html>
 	<head>
 		<meta charset="UTF-8" />
 		<title>5E_レジ</title>
 		<style>
-            @media (min-width: 600px) {
-                #parent {
+           *{
+                #parent{
                     display: flex;
                 }
 
-                #child1 {
-                    flex-grow: 1;
-                    margin: 10px;
-                    border: 2px solid black;
-                    height: 600px;
-                    width: 600px;
-                    font-size: 20px;
-                    padding: 5px;
-                }
-      			#child2 {
-        			flex-grow: 1;
-      			}
+            #child1 {
+                flex: 1;
+                margin: 10px;
+                border: 2px solid black;
+                font-size: 20px;
+                padding: 5px;
+            }
+
+            #child2 {
+                flex: 2;
+            }
                 .num_change {
                     height: 50px;
                     width: 50px;
@@ -49,24 +47,27 @@
 				.font_num {
 					font-size:xx-large;
 				}
+			.center{
+				text-align:center;
+			}
     		}
 		</style>
 		<script>
             let counter, btnAdd;
-            let n;
-			var j=0;
+            let hasimaki_num=0;
+			let order_times=0;
 			const option=["eye","cheese","mas","mayo_no","source_no","katuo_no","nori_no"];
-			const option_name=["<span class='indent'>目玉焼き</span><span class='right'>50円</span></br>","<span class='indent'>チーズ</br></span>","<span class='indent'>からしマヨネーズ</br></span>","<span class='indent'>マヨネーズ抜き</br></span>","<span class='indent'>ソース抜き</br></span>","<span class='indent'>かつお節抜き</br></span>","<span class='indent'>青のり抜き</br></span>"]
+			const option_name=["<span class='indent'>目玉焼き</span><span class='right'></span><br>","<span class='indent'>チーズ<br></span>","<span class='indent'>からしマヨネーズ<br></span>","<span class='indent'>マヨネーズ抜き<br></span>","<span class='indent'>ソース抜き<br></span>","<span class='indent'>かつお節抜き<br></span>","<span class='indent'>青のり抜き<br></span>"]
 			const order_option=[];
 
             function addCount() {
-                n++;
-                counter.innerHTML = n;
+                hasimaki_num++;
+                counter.innerHTML = hasimaki_num;
 			}
             function decCount() {
-				n--;
-				if (n < 0) { n = 0 };
-                counter.innerHTML = n;
+				hasimaki_num--;
+				if (hasimaki_num < 0) { hasimaki_num = 0 };
+                counter.innerHTML = hasimaki_num;
             }
 
             window.addEventListener("load", () => {
@@ -88,33 +89,34 @@
                 }
 			}
 			function add() {
-				
-				var option_name_total = '箸巻き'+n+'個</br>';
-				if(j<5){
-					j++;
-				}
-				for (let i=0;i< 7;i++){
-					order_option[i] = document.getElementById(option[i]).style.backgroundColor;
-					if(order_option[i] == "red"){
-						option_name_total=option_name_total+option_name[i];
+				if(hasimaki_num>0){
+					let option_name_total = `箸巻き${hasimaki_num}個<br>`;
+					if(order_times<5){
+						order_times++;
 					}
+					for (let i=0;i< 7;i++){
+						order_option[i] = document.getElementById(option[i]).style.backgroundColor;
+						if(order_option[i] == "red"){
+							option_name_total=option_name_total+option_name[i];
+						}
+					}
+					let order_order_num="order"+order_times;
+					let order = document.getElementById(order_order_num);
+					order.innerHTML = option_name_total;
+					option_name_total="";
 				}
-				var order_order_num="order"+j;
-				let order = document.getElementById(order_order_num);
-				order.innerHTML = option_name_total;
-				option_name_total="";
 			}
 			function one_back() {
-				if(j>0){ 
-					var order_order_num="order"+j;
+				if(order_times>0){ 
+					let order_order_num="order"+order_times;
 					let order = document.getElementById(order_order_num);
 					order.innerHTML = "";
-					j--;
+					order_times--;
 				}	
 			}
 			function reset(){
-				for (j;j>0;j--){
-					var order_order_num="order"+j;
+				for (order_times;order_times>0;order_times--){
+					let order_order_num="order"+order_times;
 					let order = document.getElementById(order_order_num);
 					order.innerHTML = "";
 				}
@@ -131,38 +133,38 @@
 				<p id="order5"></p>
 			</div>
 			<div id="child2">
-				<center>
+				<div class="center">
 					<h3>個数</h3>
 					<input class="num_change" type="button" id="btnDec" value="-">
 					<span id="counter" class="font_num">0</span>
 					<input class="num_change" type="button" id="btnAdd" value="+">
-				</center>
-				</br>
-				<center>
+				</div>
+				<br>
+				<div class="center">
 					<h3>トッピング</h3>
-				</center>
+				</div>
 				<button id="eye" class="button" onclick="sel('eye')">目玉焼き</button>
 				<button id="cheese" class="button" onclick="sel('cheese')">チーズ</button>
-				</br>
+				<br>
 				<button id="mas" class="button" onclick="sel('mas')">からしマヨネーズ</button>
-				</br>
-				<center>
+				<br>
+				<div class="center">
 					<h3>抜き</h3>
-				</center>
+				</div>
 				<button id="mayo_no" class="button" onclick="sel('mayo_no')">マヨネーズ抜き</button>
 				<button id="source_no" class="button" onclick="sel('source_no')">ソース抜き</button>
-				</br>
+				<br>
 				<button id="katuo_no" class="button" onclick="sel('katuo_no')">かつお節抜き</button>
 				<button id="nori_no" class="button" onclick="sel('nori_no')">青のり抜き</button>
-				</br>
-				<center>
+				<br>
+				<div class="center">
 					<h3>操作</h3>
-				</center>
+				</div>
 				<button id="add" class="button_big" onclick="add()">追加</button>
-				</br>
+				<br>
 				<button id="one_back" class="button" onclick="one_back()">１個消去</button>
 				<button id="reset" class="button" onclick="reset()">全消去</button>
-				</br>
+				<br>
 				<button id="submit" class="button_big" onclick="submit()">確定</button>
 
 			</div>
