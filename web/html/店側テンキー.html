@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+  <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>5E_テンキー</title>
+      <style>
+        * {
+          font-size: 50px;
+        }
+        #parent {
+          display: flex;
+        }
+
+        #child1 {
+          flex: 1;
+          margin: 10px;
+          border: 2px solid black;
+          padding: 5px;
+        }
+
+        #child2 {
+          flex: 1;
+        }
+
+        .key {
+          height: 150px;
+          width: 150px;
+          margin: 5px;
+          background-color: white;
+        }
+
+        .submit {
+          height: 100px;
+          width: 480px;
+          margin: 5px;
+          background-color: white;
+        }
+        .money {
+          text-align: right;
+        }
+      </style>
+    </head>
+
+    <body>
+      <div id="parent">
+        <div id="child1">
+          合計金額:<br />
+          <span id="order_total" class="money"></span>
+          円<br />
+          お預かり金額：<br />
+          <span id="deposit" class="money">0</span>
+          円<br />
+          おつり:<br />
+          <span id="change" class="money"></span>
+          円<br />
+        </div>
+        <div id="child2">
+          <table>
+            <tr>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(7)">
+                  7
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(8)">
+                  8
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(9)">
+                  9
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(4)">
+                  4
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(5)">
+                  5
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(6)">
+                  6
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(1)">
+                  1
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(2)">
+                  2
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(3)">
+                  3
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <button type="button" class="key" onclick="keyEvent(0)">
+                  0
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="oneClear()">
+                  C
+                </button>
+              </td>
+              <td>
+                <button type="button" class="key" onclick="allClear()">
+                  CA
+                </button>
+              </td>
+            </tr>
+          </table>
+          <button type="button" class="submit" onclick="submit()">確定</button>
+        </div>
+      </div>
+      <script>
+        let input_value = 0;
+        let order_total_num = 1000;
+        window.addEventListener("load", () => {
+          // 起動時の処理
+          let order_total = document.getElementById("order_total");
+          order_total.innerHTML = order_total_num;
+          let change = document.getElementById("change");
+          change.innerHTML = input_value - order_total_num;
+        });
+        function keyEvent(x) {
+          input_value = input_value * 10 + x;
+          let deposit = document.getElementById("deposit");
+          deposit.innerHTML = input_value;
+          let change = document.getElementById("change");
+          change.innerHTML = input_value - order_total_num;
+        }
+        function oneClear() {
+          input_value = Math.floor(input_value / 10);
+          let deposit = document.getElementById("deposit");
+          deposit.innerHTML = input_value;
+          let change = document.getElementById("change");
+          change.innerHTML = input_value - order_total_num;
+        }
+        function allClear() {
+          input_value = 0;
+          let deposit = document.getElementById("deposit");
+          deposit.innerHTML = input_value;
+          let change = document.getElementById("change");
+          change.innerHTML = input_value - order_total_num;
+        }
+      </script>
+    </body>
+  </html>
+</html>
