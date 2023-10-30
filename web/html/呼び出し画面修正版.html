@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>POS</title>
+    <style>
+        .title{
+            background: rgb(241, 241, 241);
+            border-left: solid 15px rgb(82, 252, 235);
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.33);
+            font-size: 80px;
+            text-align: center;
+            padding: 5px ;
+            margin: 10px;
+        }
+        .light{
+            animation: flash 2s ease-in-out infinite alternate;
+        }
+        @keyframes flash{
+            33%,66%{
+                opacity: 1;
+                color: red;
+            }
+        }
+        .fc{
+            display: flex;
+            gap: 10px;
+        }
+        .fi{
+            flex-grow: 1;
+        }
+        .bignum{
+            list-style: none;
+            font-size: 60px;
+            padding: 0px;
+            margin: 20px 20px 20px 40px
+        }
+        .column{
+            column-count: 2;
+        }
+        .img{
+            transform: rotate(40deg);
+        }
+    </style>
+</head>
+
+<body class="fc">
+    <section class="fi">
+        <h1 class="title">お待ちの番号</h1>
+        <ul class="bignum column">
+            <li>1</li>
+            <li>2</li>
+            <li>3</li>
+            <li>4</li>
+            <li>5</li>
+            <li>6</li>
+            <li>7</li>
+            <li>8</li>
+            <li>9</li>
+            <li>10</li>
+            <li>11</li>
+            <li>12</li>
+            <li>13</li>
+            <li>14</li>
+        </ul>
+    </section>
+    <section class="fi">
+        <h1 class="title">呼び出しの番号</h1>
+        <ul class="bignum light column">
+            <li>15</li>
+            <li>16</li>
+            <li>17</li>
+            <li>18</li>
+            <li>19</li>
+            <li>20</li>
+        </ul>
+        <img src="hasimaki.png" width="480" height="400" class="img">
+    </section>
+</body>
+
+</html>
