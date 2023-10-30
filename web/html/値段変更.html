@@ -44,8 +44,12 @@
             <td><input type="number"placeholder="10 の倍数" step="10" id="08" name="aonorinuki" value="0">円</td>
         </tr>
       </table>
-      <div>
-          <button>変更する</button>
-      </div>
+     <script type="text/javascript">
+        function change(){
+         document.getElementById("change").innerHTML = "&#10003変更を保存しました";
+         }
+     </script>
+     <input type="button" value="変更する" onclick="change()" />
+     <span style="color:#00ff5f" id="change"></span>
   </body>
 </html>
