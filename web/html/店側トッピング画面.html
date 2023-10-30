@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>5E_レジ</title>
+    <style>
+      #parent {
+        display: flex;
+      }
+
+      #child1 {
+        flex: 1;
+        margin: 10px;
+        border: 2px solid black;
+        font-size: 20px;
+        padding: 5px;
+      }
+
+      #child2 {
+        flex: 1;
+      }
+
+      .num_change {
+        height: 50px;
+        width: 50px;
+        background-color: white;
+      }
+
+      .order {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .button {
+        height: 50px;
+        width: 250px;
+        margin-bottom: 2px;
+        background-color: white;
+      }
+
+      .button_big {
+        height: 50px;
+        width: 500px;
+        margin-bottom: 2px;
+        background-color: white;
+      }
+
+      .indent {
+        text-indent: 1rem;
+        padding-left: 1em;
+      }
+
+      .font_num {
+        font-size: xx-large;
+      }
+
+      .center {
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="parent">
+      <div id="child1">
+        <p id="order1"></p>
+        <p id="order2"></p>
+        <p id="order3"></p>
+        <p id="order4"></p>
+        <p id="order5"></p>
+      </div>
+      <div id="child2">
+        <div class="center">
+          <h3>個数</h3>
+          <button class="num_change" id="btnDec" onclick="decCount()">-</button>
+          <span id="counter" class="font_num">1</span>
+          <button class="num_change" id="btnAdd" onclick="addCount()">+</button>
+        </div>
+        <br />
+        <div class="center">
+          <h3>トッピング</h3>
+        </div>
+        <button id="eye" class="button" onclick="sel('eye')">目玉焼き</button>
+        <button id="cheese" class="button" onclick="sel('cheese')">
+          チーズ
+        </button>
+        <br />
+        <button id="mas" class="button" onclick="sel('mas')">
+          からしマヨネーズ
+        </button>
+        <br />
+        <div class="center">
+          <h3>抜き</h3>
+        </div>
+        <button id="mayo_no" class="button" onclick="sel('mayo_no')">
+          マヨネーズ抜き
+        </button>
+        <button id="source_no" class="button" onclick="sel('source_no')">
+          ソース抜き
+        </button>
+        <br />
+        <button id="katuo_no" class="button" onclick="sel('katuo_no')">
+          かつお節抜き
+        </button>
+        <button id="nori_no" class="button" onclick="sel('nori_no')">
+          青のり抜き
+        </button>
+        <br />
+        <div class="center">
+          <h3>操作</h3>
+        </div>
+        <button id="add" class="button_big" onclick="add()">追加</button>
+        <br />
+        <button id="one_back" class="button" onclick="one_back()">
+          １個消去
+        </button>
+        <button id="reset" class="button" onclick="reset()">全消去</button>
+        <br />
+        <button id="submit" class="button_big" onclick="submit()">確定</button>
+      </div>
+    </div>
+    <script>
+      let hasimaki_num = 1;
+      let order_times = 0;
+      const option = [
+        "eye",
+        "cheese",
+        "mas",
+        "mayo_no",
+        "source_no",
+        "katuo_no",
+        "nori_no",
+      ];
+      const option_name = [
+        "<div class='order'><span class='indent'>目玉焼き</span><span >+50円</span></div>",
+        "<div class='order'><span class='indent'>チーズ</span><span>+50円</span></div>",
+        "<div class='order'><span class='indent'>からしマヨネーズ</span><span>+50円</span></div>",
+        "<div class='order'><span class='indent'>マヨネーズ抜き</span><span>-0円</span></div>",
+        "<div class='order'><span class='indent'>ソース抜き</span><span>-0円</span></div>",
+        "<div class='order'><span class='indent'>かつお節抜き</span><span>-0円</span></div>",
+        "<div class='order'><span class='indent'>青のり抜き</span><span>-0円</span></div>",
+      ];
+      const order_option = [];
+
+      function addCount() {
+        hasimaki_num++;
+        document.getElementById("counter").innerHTML = hasimaki_num;
+      }
+      function decCount() {
+        hasimaki_num--;
+        if (hasimaki_num < 1) {
+          hasimaki_num = 1;
+        }
+        document.getElementById("counter").innerHTML = hasimaki_num;
+      }
+
+      function sel(x) {
+        let target = document.getElementById(x);
+        if (target.style.backgroundColor != "red") {
+          target.style.backgroundColor = "red";
+        } else {
+          target.style.backgroundColor = "white";
+        }
+      }
+      function add() {
+        if (hasimaki_num > 0) {
+          let option_name_total = `<div>箸巻き${hasimaki_num}個</div>`;
+          if (order_times < 5) {
+            order_times++;
+          }
+          for (let i = 0; i < 7; i++) {
+            order_option[i] = document.getElementById(
+              option[i],
+            ).style.backgroundColor;
+            if (order_option[i] == "red") {
+              option_name_total = option_name_total + option_name[i];
+            }
+            document.getElementById(option[i]).style.backgroundColor = "white";
+          }
+          let order_order_num = "order" + order_times;
+          let order = document.getElementById(order_order_num);
+          order.innerHTML = option_name_total;
+          option_name_total = "";
+          hasimaki_num = 1;
+          document.getElementById("counter").innerHTML = hasimaki_num;
+        }
+      }
+      function one_back() {
+        if (order_times > 0) {
+          let order_order_num = "order" + order_times;
+          let order = document.getElementById(order_order_num);
+          order.innerHTML = "";
+          order_times--;
+        }
+      }
+      function reset() {
+        for (order_times; order_times > 0; order_times--) {
+          let order_order_num = "order" + order_times;
+          let order = document.getElementById(order_order_num);
+          order.innerHTML = "";
+        }
+      }
+    </script>
+  </body>
+</html>
