@@ -4,82 +4,87 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-      .chef{
+      .chef {
         display: flex;
         justify-content: space-around;
         flex-wrap: wrap;
         height: 13vh;
         font-size: 4vh;
       }
-      .cbox{
+      .cbox {
         width: 30vw;
         height: 10vh;
         margin: 1vh 0;
         border-radius: 2vmin;
         border: 2px solid #000;
         display: flex;
-        justify-content:center;
-        align-items:center;
+        justify-content: center;
+        align-items: center;
       }
-      .container{
+      .container {
         display: flex;
         justify-content: space-around;
         flex-wrap: wrap;
         height: 55vh;
       }
-      .box{
+      .box {
         width: 30vw;
         height: 25vh;
         margin: 1vh 0;
         border-radius: 2vmin;
         border: 2px solid #000;
         justify-content: center;
-        display:flex;
-        align-items:center;
+        display: flex;
+        align-items: center;
         background-color: lightblue;
         font-size: 4vh;
       }
-      .info{
+      .info {
         width: 100vw;
         height: 25vh;
-        font-size:4vh;
-        margin-left:1vw;
+        font-size: 4vh;
+        margin-left: 1vw;
       }
-      .info_text{
-        font-size:3vh;
+      .info_text {
+        font-size: 3vh;
       }
     </style>
     <title>シェフ側</title>
   </head>
   <body>
     <div class="chef">
-      <div class="cbox" style="background-color:lightsalmon">シェフ1</div>
-      <div class="cbox" style="background-color:lightgreen">シェフ2</div>
-      <div class="cbox" style="background-color:lightpink">シェフ3</div>
+      <div class="cbox" style="background-color: lightsalmon">シェフ1</div>
+      <div class="cbox" style="background-color: lightgreen">シェフ2</div>
+      <div class="cbox" style="background-color: lightpink">シェフ3</div>
     </div>
-    
+
     <div class="container">
-      <div class="box">box1<br>2行目aaaa<br>3行目<br>4行目</div>
-      <div class="box">box2<br>2行目aaaa<br>3行目<br>4行目</div>
-      <div class="box">box3<br>2行目aaaa<br>3行目<br>4行目</div>
-      <div class="box">box4<br>2行目aaaa<br>3行目<br>4行目</div>
-      <div class="box">box5<br>2行目aaaa<br>3行目<br>4行目</div>
-      <div class="box">box6<br>2行目aaaa<br>3行目<br>4行目</div>
+      <div class="box">box1<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box2<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box3<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box4<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box5<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box6<br />2行目aaaa<br />3行目<br />4行目</div>
     </div>
-    
+
     <div class="info">
-      <hr>
+      <hr />
       Information
       <div class="info_text"></div>
     </div>
 
     <script type="text/javascript">
-      const cbox = document.querySelectorAll('.cbox');
-      const boxes = document.querySelectorAll('.box');
+      const cbox = document.querySelectorAll(".cbox");
+      const boxes = document.querySelectorAll(".box");
       let info = document.getElementsByClassName("info_text")[0];
-      const colors = ["lightsalmon","lightgreen","lightpink","lightblue"];
-      const slctcolors = ["rgb(253, 98, 36)","green","rgb(250, 44, 75)","rgb(38, 196, 248)"];
-      
+      const colors = ["lightsalmon", "lightgreen", "lightpink", "lightblue"];
+      const slctcolors = [
+        "rgb(253, 98, 36)",
+        "green",
+        "rgb(250, 44, 75)",
+        "rgb(38, 196, 248)",
+      ];
+
       let num = null;
       let chef = null;
       let cchef = null;
@@ -87,35 +92,38 @@
       let cmenu = null;
       let tejun = 0;
       let i = 0;
-      let lchef = [null,null,null];
-      let lmenu = [null,null,null,null,null,null];
+      let lchef = [null, null, null];
+      let lmenu = [null, null, null, null, null, null];
 
-      document.addEventListener('keydown',(event)=> {
-        if(event.key >= '1' && event.key <='9'){
-          if(event.key >= '1' && event.key <= '3'){
+      document.addEventListener("keydown", (event) => {
+        if (event.key >= "1" && event.key <= "9") {
+          if (event.key >= "1" && event.key <= "3") {
             num = parseInt(event.key) + 2;
-          } else if(event.key >='4' && event.key <= '6'){
+          } else if (event.key >= "4" && event.key <= "6") {
             num = parseInt(event.key) - 4;
           } else {
             num = parseInt(event.key) - 1;
           }
-          if(num >= 6){
+          if (num >= 6) {
             slctchef();
           } else {
             slctmenu();
           }
-        } else if(event.key == 'Enter'){
+        } else if (event.key == "Enter") {
           enter();
         }
       });
 
-      function slctchef(){ //シェフボタン選択
+      function slctchef() {
+        //シェフボタン選択
         chef = num - 6;
         num = null;
-        if(cchef != null){ //前にシェフが選択されてた時選択を消す
+        if (cchef != null) {
+          //前にシェフが選択されてた時選択を消す
           cbox[cchef].style.backgroundColor = colors[cchef];
-          if(cmenu != null){ //料理を選択してた時も選択を消す
-            if(lmenu[cmenu]!=null){
+          if (cmenu != null) {
+            //料理を選択してた時も選択を消す
+            if (lmenu[cmenu] != null) {
               boxes[cmenu].style.backgroundColor = colors[lmenu[cmenu]];
             } else {
               boxes[cmenu].style.backgroundColor = colors[3];
@@ -123,7 +131,8 @@
             cmenu = null;
           }
           infotext(0);
-          if(cchef == chef){ //前と同じシェフを選択したら選択解除
+          if (cchef == chef) {
+            //前と同じシェフを選択したら選択解除
             cchef = null;
             return;
           }
@@ -132,34 +141,44 @@
         cbox[chef].style.backgroundColor = slctcolors[chef]; //シェフを選択
         cchef = chef;
         infotext(1);
-        if(lchef[cchef] != null){ //選んだシェフが調理中の時
+        if (lchef[cchef] != null) {
+          //選んだシェフが調理中の時
           boxes[lchef[cchef]].style.backgroundColor = slctcolors[cchef];
           cmenu = lchef[cchef]; //調理中の料理も選択する
           infotext(4);
         }
         return;
       }
-      function slctmenu(){ //料理選択
+      function slctmenu() {
+        //料理選択
         menu = num;
         num = null;
-        if(cchef == null){ //シェフ選択してない時
+        if (cchef == null) {
+          //シェフ選択してない時
           infotext(0);
-        } else if(lchef[cchef] != null){ //シェフが調理中の時
+        } else if (lchef[cchef] != null) {
+          //シェフが調理中の時
           infotext(4);
-        } else if(lmenu[menu] != null){ //選んだ料理が他で調理中の時
+        } else if (lmenu[menu] != null) {
+          //選んだ料理が他で調理中の時
           infotext(3);
-          if(cmenu != null){  //直前に選んでた料理を選択解除する
+          if (cmenu != null) {
+            //直前に選んでた料理を選択解除する
             boxes[cmenu].style.backgroundColor = colors[3];
           }
           cmenu = null;
-        } else { //別の料理選ぶとき
-          if(cmenu != null){ //前の料理選択表示を消す
+        } else {
+          //別の料理選ぶとき
+          if (cmenu != null) {
+            //前の料理選択表示を消す
             boxes[cmenu].style.backgroundColor = colors[3];
           }
-          if(cmenu == menu){    //同じ選択したら選択取り消し
+          if (cmenu == menu) {
+            //同じ選択したら選択取り消し
             cmenu = null;
             infotext(1);
-          } else {      //次の選択と表示
+          } else {
+            //次の選択と表示
             boxes[menu].style.backgroundColor = slctcolors[3];
             cmenu = menu;
             infotext(2);
@@ -167,50 +186,71 @@
         }
         return;
       }
-      function enter(){ //Enterキー押したときの処理
-        if(cchef == null){ //シェフが選択されているか
+      function enter() {
+        //Enterキー押したときの処理
+        if (cchef == null) {
+          //シェフが選択されているか
           infotext(0);
-        }else if(cmenu == null){
+        } else if (cmenu == null) {
           infotext(1);
-        }else if(lchef[cchef] != null){ //選択されているシェフが調理中かどうか
+        } else if (lchef[cchef] != null) {
+          //選択されているシェフが調理中かどうか
           lchef[cchef] = null;
           lmenu[cmenu] = null;
           cbox[cchef].style.backgroundColor = colors[cchef];
           boxes[cmenu].style.backgroundColor = colors[3];
-          console.log("シェフ"+(cchef+1)+"が料理"+(cmenu+1)+"を調理終了");
+          console.log(
+            "シェフ" + (cchef + 1) + "が料理" + (cmenu + 1) + "を調理終了",
+          );
           cchef = null;
           cmenu = null;
           infotext(0);
-        } else { //料理を決定
+        } else {
+          //料理を決定
           lchef[cchef] = cmenu;
           lmenu[cmenu] = cchef;
           cbox[cchef].style.backgroundColor = colors[cchef];
           boxes[cmenu].style.backgroundColor = colors[cchef];
-          console.log("シェフ"+(cchef+1)+"が料理"+(cmenu+1)+"を調理開始");
+          console.log(
+            "シェフ" + (cchef + 1) + "が料理" + (cmenu + 1) + "を調理開始",
+          );
           cchef = null;
           cmenu = null;
           infotext(0);
         }
         return;
       }
-      function infotext(i){ //informationテキスト
-        switch(i){
+      function infotext(i) {
+        //informationテキスト
+        switch (i) {
           case 0:
-            info.innerHTML=">シェフ番号から選んでね。<br>もう一度押すと選択解除、他のものも選べるよ。";
+            info.innerHTML =
+              ">シェフ番号から選んでね。<br>もう一度押すと選択解除、他のものも選べるよ。";
             break;
           case 1:
-            info.innerHTML=">シェフ"+(cchef+1)+"、作る料理を選んでね。<br>もう一度押すと選択解除、他のものも選べるよ。";
+            info.innerHTML =
+              ">シェフ" +
+              (cchef + 1) +
+              "、作る料理を選んでね。<br>もう一度押すと選択解除、他のものも選べるよ。";
             break;
           case 2:
-            info.innerHTML="シェフ"+(cchef+1)+"、エンターで作る料理を確定してね。<br>もう一度押すと選択解除、他のものも選べるよ。";
+            info.innerHTML =
+              "シェフ" +
+              (cchef + 1) +
+              "、エンターで作る料理を確定してね。<br>もう一度押すと選択解除、他のものも選べるよ。";
             break;
           case 3:
-            info.innerHTML="シェフ"+(cchef+1)+"、それは調理中だから他を選んでね。";
+            info.innerHTML =
+              "シェフ" + (cchef + 1) + "、それは調理中だから他を選んでね。";
             break;
           case 4:
-            info.innerHTML="シェフ"+(cchef+1)+"、完成したらエンターを押してね。<br>1度に調理できるのはひとつの料理までだよ。";
+            info.innerHTML =
+              "シェフ" +
+              (cchef + 1) +
+              "、完成したらエンターを押してね。<br>1度に調理できるのはひとつの料理までだよ。";
             break;
-          default: break;
+          default:
+            break;
         }
       }
     </script>
