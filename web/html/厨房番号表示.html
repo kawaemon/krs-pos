@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content="5">
+    <title>注文番号一覧</title>
+   
+  </head>
+  <script>
+    let pendingOrders = [1, 2, 3,4,5,6,7,8];
+    const button_def=[
+    `<span id='button1' class='sizechar'>${pendingOrders[0]}</span><button type='button' class='sizechar' onclick='deletefactor1();'>完了</button><br>`,
+    `<span id='button2' class='sizechar'>${pendingOrders[1]}</span><button type='button' class='sizechar' onclick='deletefactor2();'>完了</button><br>`,
+    `<span id='button3' class='sizechar'>${pendingOrders[2]}</span><button type='button' class='sizechar' onclick='deletefactor3();'>完了</button><br>`,
+    `<span id='button4' class='sizechar'>${pendingOrders[3]}</span><button type='button' class='sizechar' onclick='deletefactor4();'>完了</button><br>`,
+    `<span id='button5' class='sizechar'>${pendingOrders[4]}</span><button type='button' class='sizechar' onclick='deletefactor5();'>完了</button><br>`,
+    `<span id='button6' class='sizechar'>${pendingOrders[5]}</span><button type='button' class='sizechar' onclick='deletefactor6();'>完了</button><br>`,
+    `<span id='button7' class='sizechar'>${pendingOrders[6]}</span><button type='button' class='sizechar' onclick='deletefactor7();'>完了</button><br>`,
+    `<span id='button8' class='sizechar'>${pendingOrders[7]}</span><button type='button' class='sizechar' onclick='deletefactor8();'>完了</button><br>`
+    ]
+    window.addEventListener("load",()=>{
+        let num=0,orderlength;
+     orderlength=pendingOrders.length;
+     for(var i=0;i<orderlength;i++){
+         let wait_id="button"+(i+1);
+         let wait=document.getElementById(wait_id);
+         wait.innerHTML=button_def[i];
+     }
+    });
+   
+    function addfactor(){
+        pendhingOrders.push(4)
+    }
+    function deletefactor1() {
+        var x = document.getElementById("button1");
+        x.innerHTML = "";
+       delete pendhingOrders [0];
+    }
+    function deletefactor2() {
+        var x = document.getElementById("button2");
+        x.innerHTML = "";
+       delete pendhingOrders [1];
+    }
+    function deletefactor3() {
+        var x = document.getElementById("button3");
+        x.innerHTML = "";
+       delete pendhingOrders [2];
+    }
+    function deletefactor4() {
+        var x = document.getElementById("button4");
+        x.innerHTML = "";
+       delete pendhingOrders [3];
+    }
+    function deletefactor5() {
+        var x = document.getElementById("button5");
+        x.innerHTML = "";
+       delete pendhingOrders [4];
+    }
+    function deletefactor6() {
+        var x = document.getElementById("button6");
+        x.innerHTML = "";
+       delete pendhingOrders [5];
+    }
+    function deletefactor7() {
+        var x = document.getElementById("button7");
+        x.innerHTML = "";
+       delete pendhingOrders [6];
+    }
+    function deletefactor8() {
+        var x = document.getElementById("button8");
+        x.innerHTML = "";
+       delete pendhingOrders [7];
+    }
+</script>
+<style>
+    .box {
+        width: 800px;
+        height: 640px;
+        background: gray;
+      }
+      .sizechar{
+        font-size:150%;
+    }  
+</style>
+  <body>  
+    <div style="text-align: center">
+        <h1>注文番号一覧</h1>
+            <p id="button1" class="sizechar"></p>
+            <p id="button2" class="sizechar"></p>
+            <p id="button3" class="sizechar"></p>
+            <p id="button4" class="sizechar"></p>
+            <p id="button5" class="sizechar"></p>
+            <p id="button6" class="sizechar"></p>
+            <p id="button7" class="sizechar"></p>
+            <p id="button8" class="sizechar"></p>
+    </div>
+  </body>
+</html>
