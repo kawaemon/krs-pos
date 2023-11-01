@@ -42,6 +42,8 @@
         }
         .img{
             transform: rotate(40deg);
+            position:fixed;
+            bottom: 5px;
         }
     </style>
 </head>
@@ -49,7 +51,7 @@
 <body class="fc">
     <section class="fi">
         <h1 class="title">お待ちの番号</h1>
-        <ul class="bignum column">
+        <ul id="pending_list" class="bignum column">
             <li>1</li>
             <li>2</li>
             <li>3</li>
@@ -68,7 +70,7 @@
     </section>
     <section class="fi">
         <h1 class="title">呼び出しの番号</h1>
-        <ul class="bignum light column">
+        <ul id="calling_list" class="bignum light column">
             <li>15</li>
             <li>16</li>
             <li>17</li>
@@ -78,6 +80,40 @@
         </ul>
         <img src="hasimaki.png" width="480" height="400" class="img">
     </section>
+    <script>
+        const socket=new WebSocket("ws://localhost:3000/order/pending_ws");
+        socket.addEventListener("open",()=>{
+            console.log("サーバーとの接続に成功しました");
+        });
+
+        function updatecontent(pending,calling){
+                const pendinglist=document.getElementById("pending_list");
+                while(pendinglist.firstChild!=null){
+                    pendinglist.removeChild(pendinglist.firstChild);
+                }
+                const callinglist=document.getElementById("calling_list");
+                while(callinglist.firstChild!=null){
+                    callinglist.removeChild(callinglist.firstChild);
+                }
+                for(const p of pending){
+                    const li=document.createElement("li");
+                    li.textContent=p.toString();
+                    pendinglist.appendChild(li);
+                }
+                for(const p of calling){
+                    const li=document.createElement("li");
+                    li.textContent=p.toString();
+                    callinglist.appendChild(li);
+                }
+        }
+
+        socket.addEventListener("message",(event)=>{
+            const message=JSON.parse(event.data);
+            if(message.type=="refresh"){
+                updatecontent(message.pending,message.calling);
+            }
+        })
+    </script>
 </body>
 
 </html>
