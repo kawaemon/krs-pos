@@ -15,6 +15,11 @@
         font-size: 20px;
         padding: 5px;
       }
+      button {
+        font-size: 20px;
+        border: solid 1px black;
+        color: black;
+      }
 
       #child2 {
         flex: 1;
@@ -133,6 +138,23 @@
       ];
       const order_option = [];
 
+      let items = [];
+
+      // const HOST = "http://localhost:3000";
+      const HOST = "http://192.168.0.68:3000";
+
+      function submit() {
+        void (async () => {
+          const res = await fetch(HOST + "/orders", {
+            method: "POST",
+            headers: { "Content-Type": "Application/json" },
+            body: JSON.stringify(items),
+          });
+          const body = await res.json();
+          window.location.href = `./1_payment.html?groupID=${body.id}&price=${body.price}`;
+        })();
+      }
+
       function addCount() {
         hasimaki_num++;
         document.getElementById("counter").innerHTML = hasimaki_num;
@@ -153,38 +175,67 @@
           target.style.backgroundColor = "white";
         }
       }
+
       function add() {
         const option_name = [
-        `<div class='order'><span class='indent'>目玉焼き</span><span >+50円×${hasimaki_num}</span></div>`,
-        `<div class='order'><span class='indent'>チーズ</span><span>+50円×${hasimaki_num}</span></div>`,
-        `<div class='order'><span class='indent'>からしマヨネーズ</span><span>+50円×${hasimaki_num}</span></div>`,
-        `<div class='order'><span class='indent'>マヨネーズ抜き</span><span>-0円×${hasimaki_num}</span></div>`,
-        `<div class='order'><span class='indent'>ソース抜き</span><span>-0円×${hasimaki_num}</span></div>`,
-        `<div class='order'><span class='indent'>かつお節抜き</span><span>-0円×${hasimaki_num}</span></div>`,
-        `<div class='order'><span class='indent'>青のり抜き</span><span>-0円×${hasimaki_num}</span></div>`,
-      ];
-        if (hasimaki_num > 0) {
-          let option_name_total = `<div>箸巻き${hasimaki_num}個</div>`;
-          if (order_times < 5) {
-            order_times++;
-          }
-          for (let i = 0; i < 7; i++) {
-            order_option[i] = document.getElementById(
-              option[i],
-            ).style.backgroundColor;
-            if (order_option[i] == "red") {
-              option_name_total = option_name_total + option_name[i];
-            }
-            document.getElementById(option[i]).style.backgroundColor = "white";
-          }
-          let order_order_num = "order" + order_times;
-          let order = document.getElementById(order_order_num);
-          order.innerHTML = option_name_total;
-          option_name_total = "";
-          hasimaki_num = 1;
-          document.getElementById("counter").innerHTML = hasimaki_num;
+          `<div class='order'><span class='indent'>目玉焼き</span><span >+50円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>チーズ</span><span>+50円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>からしマヨネーズ</span><span>+50円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>マヨネーズ抜き</span><span>-0円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>ソース抜き</span><span>-0円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>かつお節抜き</span><span>-0円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>青のり抜き</span><span>-0円×${hasimaki_num}</span></div>`,
+        ];
+
+        if (hasimaki_num <= 0) {
+          return;
         }
+
+        let option_name_total = `<div>箸巻き${hasimaki_num}個</div>`;
+        if (order_times < 5) {
+          order_times++;
+        }
+
+        const optionMap = {};
+
+        for (let i = 0; i < option.length; i++) {
+          const optionID = option[i];
+
+          order_option[i] =
+            document.getElementById(optionID).style.backgroundColor;
+
+          const enabled = order_option[i] == "red";
+
+          optionMap[optionID] = enabled;
+
+          if (enabled) {
+            option_name_total = option_name_total + option_name[i];
+          }
+
+          document.getElementById(option[i]).style.backgroundColor = "white";
+        }
+
+        items.push({
+          count: hasimaki_num,
+          egg: optionMap["eye"],
+          cheese: optionMap["cheese"],
+          spicyMayonnaise: optionMap["mas"],
+          noMayonnaise: optionMap["mayo_no"],
+          noSauce: optionMap["source_no"],
+          noBonito: optionMap["katuo_no"],
+          noAonori: optionMap["nori_no"],
+        });
+
+        let order_order_num = "order" + order_times;
+        let order = document.getElementById(order_order_num);
+
+        order.innerHTML = option_name_total;
+        option_name_total = "";
+        hasimaki_num = 1;
+
+        document.getElementById("counter").innerHTML = hasimaki_num;
       }
+
       function one_back() {
         if (order_times > 0) {
           let order_order_num = "order" + order_times;
@@ -193,6 +244,7 @@
           order_times--;
         }
       }
+
       function reset() {
         for (order_times; order_times > 0; order_times--) {
           let order_order_num = "order" + order_times;

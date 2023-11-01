@@ -1,0 +1,11 @@
+services:
+  db:
+    image: postgres
+    container_name: pos-postgres
+    ports:
+      - "6000:5432"
+    environment:
+      POSTGRES_USER: "db"
+      POSTGRES_PASSWORD: "pass"
+      POSTGRES_DB: "pos"
+
