@@ -8,6 +8,14 @@
         * {
           font-size: 50px;
         }
+        html {
+          overflow: hidden;
+        }
+
+        button {
+          border: black solid 2px;
+        }
+
         #parent {
           display: flex;
         }
@@ -48,7 +56,7 @@
           合計金額:<br />
           <span id="order_total" class="money"></span>
           円<br />
-          お預かり金額：<br />
+          お預かり金額:<br />
           <span id="deposit" class="money">0</span>
           円<br />
           おつり:<br />
@@ -121,7 +129,7 @@
               </td>
               <td>
                 <button type="button" class="key" onclick="allClear()">
-                  CA
+                  AC
                 </button>
               </td>
             </tr>
@@ -130,8 +138,36 @@
         </div>
       </div>
       <script>
+        const params = new Proxy(new URLSearchParams(window.location.search), {
+          get: (searchParams, prop) => searchParams.get(prop),
+        });
+
         let input_value = 0;
-        let order_total_num = 1000;
+        const order_total_num = parseInt(params.price);
+
+        // const HOST = "http://localhost:3000";
+        const HOST = "http://192.168.0.68:3000";
+
+        function submit() {
+          if (input_value < order_total_num) {
+            return;
+          }
+
+          void (async () => {
+            const res = await fetch(
+              `${HOST}/orders/by-id/${params.groupID}/payment`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "Application/json" },
+                body: JSON.stringify({ payedAmount: input_value }),
+              }
+            );
+            const body = await res.json();
+            const nums = body.receptNumber.join(",");
+            window.location.href = `./2_change.html?price=${order_total_num}&payed=${input_value}&nums=${nums}`;
+          })();
+        }
+
         window.addEventListener("load", () => {
           // 起動時の処理
           let order_total = document.getElementById("order_total");
@@ -139,6 +175,7 @@
           let change = document.getElementById("change");
           change.innerHTML = input_value - order_total_num;
         });
+
         function keyEvent(x) {
           input_value = input_value * 10 + x;
           let deposit = document.getElementById("deposit");
@@ -146,6 +183,7 @@
           let change = document.getElementById("change");
           change.innerHTML = input_value - order_total_num;
         }
+
         function oneClear() {
           input_value = Math.floor(input_value / 10);
           let deposit = document.getElementById("deposit");
@@ -153,6 +191,7 @@
           let change = document.getElementById("change");
           change.innerHTML = input_value - order_total_num;
         }
+
         function allClear() {
           input_value = 0;
           let deposit = document.getElementById("deposit");

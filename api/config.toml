@@ -1,0 +1,2 @@
+listen_addr = "0.0.0.0:3000"
+db_uri = "postgres://db:pass@localhost:6000/pos"

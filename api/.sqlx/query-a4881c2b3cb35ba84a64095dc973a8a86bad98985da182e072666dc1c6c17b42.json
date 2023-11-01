@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into order_queued(order_id)\n             select orders.id from orders\n             where orders.group_id = $1\n             returning order_queued.wait_number as wait_number",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "wait_number",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a4881c2b3cb35ba84a64095dc973a8a86bad98985da182e072666dc1c6c17b42"
+}
