@@ -33,4 +33,6 @@ pub trait Repository: Send + 'static {
         order_id: Id<Order>,
         chef_number: u8,
     ) -> impl Future<Output = Result<()>> + Send;
+
+    fn order_ready(&self, order_id: Id<Order>) -> impl Future<Output = Result<()>> + Send;
 }

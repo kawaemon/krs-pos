@@ -106,8 +106,6 @@
       socket.addEventListener("message", (event) => {
         const msg = JSON.parse(event.data);
 
-        console.log({ msg });
-
         switch (msg.type) {
           case "sync": {
             let diff = false;
@@ -117,16 +115,13 @@
 
             for (let i = 0; i < menuBoxElements.length; i++) {
               const item = msg.queue[i];
-              if (item == null) {
-                break;
-              }
-              if (item.order.id !== menuInstance[i]?.order?.id) {
+              if (item?.order?.id !== menuInstance[i]?.order?.id) {
                 diff = true;
               }
 
               menuInstance[i] = item ?? null;
-              menuToChefMap[i] = item.assignedCheff ?? null;
-              if (item.assignedCheff != null) {
+              menuToChefMap[i] = item?.assignedCheff ?? null;
+              if (item?.assignedCheff != null) {
                 chefToMenuMap[item.assignedCheff] = i;
               }
             }
@@ -187,7 +182,9 @@
         const num = (o.waitNumber % waitNumberMod) + 1;
         const dn = (a) => (a.length === 0 ? "なし" : a.join(",<wbr>"));
 
-        let html = `#${num}<br>`;
+        const shownid = o.order.id.substring(0, 5);
+        let html = `<span>#${num} <span style="color:gray;font-size:20px">${shownid}</span></span><br>`;
+
         html += `<span style="color:green">追加: ${dn(toppings)}</span><br>`;
         html += `<span style="color:red">抜き: ${dn(removals)}</span><br>`;
         return html;
@@ -301,8 +298,16 @@
 
         // 選択されているシェフが調理中なら調理終了
         if (chefToMenuMap[selectedChef] != null) {
-          chefToMenuMap[selectedChef] = null;
-          menuToChefMap[selectedMenu] = null;
+          // chefToMenuMap[selectedChef] = null;
+          // menuToChefMap[selectedMenu] = null;
+
+          void fetch(
+            `http://${HOST}/order/by-id/${menuInstance[selectedMenu].order.id}/ready`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "Application/json" },
+            }
+          );
 
           console.log(
             "シェフ" +

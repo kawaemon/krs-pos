@@ -210,4 +210,18 @@ impl Repository for SeaOrmRepository {
 
         Ok(())
     }
+
+    async fn order_ready(&self, order_id: Id<Order>) -> Result<()> {
+        use sea_orm::ActiveValue::*;
+
+        entities::order_ready::ActiveModel {
+            order_id: Set(order_id.into()),
+            created_at: NotSet,
+        }
+        .insert(&self.con)
+        .await
+        .context("failed to insert assigned order")?;
+
+        Ok(())
+    }
 }

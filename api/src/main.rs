@@ -81,6 +81,7 @@ async fn true_main() {
         .route("/orders/by-id/:id/payment", post(pay_order::<C>))
         .route("/orders/queued_ws", get(list_queued_orders_ws::<C>))
         .route("/order/by-id/:id/assign", post(assign_order::<C>))
+        .route("/order/by-id/:id/ready", post(order_cooking_done::<C>))
         .layer(TraceLayer::new_for_http().make_span_with(
             |req: &Request<_>| info_span!("req", method=?req.method(), path=req.uri().to_string()),
         ))
@@ -282,6 +283,7 @@ async fn list_queued_orders_ws<C: Context>(
         let mut interval = tokio::time::interval(Duration::from_secs(10));
         let mut assign = ctx.assign_subscriber();
         let mut order = ctx.order_queue_subscriber();
+        let mut cooked = ctx.cooking_done_subscriber();
 
         const PING_MAGIC: &[u8] = &[0x07, 0x08];
 
@@ -297,6 +299,10 @@ async fn list_queued_orders_ws<C: Context>(
                 }
                 _ = order.recv() => {
                     tracing::debug!("syncing due to new order event");
+                    sync(&ctx, &mut ws).await?
+                }
+                _ = cooked.recv() => {
+                    tracing::debug!("syncing due to cook done");
                     sync(&ctx, &mut ws).await?
                 }
 
@@ -375,8 +381,22 @@ async fn assign_order<C: Context>(
     Ok(())
 }
 
-// 注文一覧GET ws <- 受注, シェフアサイン subscribe
-// シェフアサイン post
+async fn order_cooking_done<C: Context>(
+    State(ctx): State<C>,
+    Path(order_id): Path<Id<Order>>,
+) -> Result<(), AppError> {
+    ctx.repo()
+        .order_ready(order_id)
+        .await
+        .context("failed to mark ready")?;
+
+    ctx.cooking_done_sender()
+        .send(())
+        .context("failed to notify cook ready event")?;
+
+    Ok(())
+}
+
 // 生産完了POST
 // 呼び出し番号GET ws <- 生産完了 subscribe
 // 呼び出し番号DELETE
