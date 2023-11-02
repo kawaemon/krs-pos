@@ -38,7 +38,7 @@ async fn true_main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "api=debug,axum::rejections=trace,tower_http=debug".into()),
+                .unwrap_or_else(|_| "api=trace,axum::rejections=trace,tower_http=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer().with_ansi(use_ansi))
         .init();
@@ -51,8 +51,19 @@ async fn true_main() {
     };
 
     // do not drop receiver
-    let (order_send, _order_recv) = broadcast::channel(10);
-    let (cooked_send, _cooked_recv) = broadcast::channel(10);
+    let (order_send, mut _order_recv) = broadcast::channel(10);
+    let (cooked_send, mut _cooked_recv) = broadcast::channel(10);
+
+    tokio::spawn(async move {
+        loop {
+            _order_recv.recv().await.unwrap()
+        }
+    });
+    tokio::spawn(async move {
+        loop {
+            _cooked_recv.recv().await.unwrap()
+        }
+    });
 
     let ctx = MyContext {
         repo: SeaOrmRepository::new(&config.db_uri).await.unwrap(),
@@ -65,7 +76,8 @@ async fn true_main() {
         .route("/", get(root))
         .route("/orders", post(post_orders::<C>))
         .route("/orders/by-id/:id/payment", post(pay_order::<C>))
-        .route("/orders/queued", get(list_queued_orders_ws::<C>))
+        .route("/orders/queued_ws", get(list_queued_orders_ws::<C>))
+        .route("/order/by-id/:id/assign", post(assign_order::<C>))
         .layer(TraceLayer::new_for_http().make_span_with(
             |req: &Request<_>| info_span!("req", method=?req.method(), path=req.uri().to_string()),
         ))
@@ -91,8 +103,8 @@ trait Context: Send + 'static {
     fn order_queue_sender(&self) -> broadcast::Sender<()>;
     fn order_queue_subscriber(&self) -> broadcast::Receiver<()>;
 
-    fn cookind_done_sender(&self) -> broadcast::Sender<()>;
-    fn cookind_done_subscriber(&self) -> broadcast::Receiver<()>;
+    fn cooking_done_sender(&self) -> broadcast::Sender<()>;
+    fn cooking_done_subscriber(&self) -> broadcast::Receiver<()>;
 }
 
 #[derive(Clone)]
@@ -112,10 +124,10 @@ impl<R: Repository + Clone + Send + 'static> Context for MyContext<R> {
     fn order_queue_subscriber(&self) -> broadcast::Receiver<()> {
         self.order_chan.subscribe()
     }
-    fn cookind_done_sender(&self) -> broadcast::Sender<()> {
+    fn cooking_done_sender(&self) -> broadcast::Sender<()> {
         self.cooked_chan.clone()
     }
-    fn cookind_done_subscriber(&self) -> broadcast::Receiver<()> {
+    fn cooking_done_subscriber(&self) -> broadcast::Receiver<()> {
         self.cooked_chan.subscribe()
     }
 }
@@ -269,7 +281,7 @@ async fn list_queued_orders_ws<C: Context>(
                         .await
                         .context("failed to get queued orders")?
                         .into_iter()
-                        .map(|(w, b)| serde_json::json!{{
+                        .map(|(w, b)| serde_json::json! {{
                             "wait_number": w,
                             "body": b,
                         }})
@@ -315,7 +327,25 @@ async fn list_queued_orders_ws<C: Context>(
     }
 }
 
-// 注文一覧GET ws <- 受注 subscribe
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AssignOrderBody {
+    chef_number: u8,
+}
+async fn assign_order<C: Context>(
+    State(ctx): State<C>,
+    Path(order_id): Path<Id<Order>>,
+    Json(body): Json<AssignOrderBody>,
+) -> Result<(), AppError> {
+    ctx.repo()
+        .assign_order(order_id, body.chef_number)
+        .await
+        .context("failed to assign")?;
+
+    Ok(())
+}
+
+// 注文一覧GET ws <- 受注, シェフアサイン subscribe
 // シェフアサイン post
 // 生産完了POST
 // 呼び出し番号GET ws <- 生産完了 subscribe

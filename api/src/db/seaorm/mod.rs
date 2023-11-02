@@ -163,7 +163,8 @@ impl Repository for SeaOrmRepository {
             from order_queued
             left outer join order_ready on order_queued.order_id=order_ready.order_id
             inner      join orders      on order_queued.order_id=orders.id
-            where order_ready.order_id is null"
+            where order_ready.order_id is null
+            order by orders.created_at"
         )
         .fetch_all(&self.sqlx)
         .await
@@ -188,5 +189,20 @@ impl Repository for SeaOrmRepository {
         .collect();
 
         Ok(res)
+    }
+
+    async fn assign_order(&self, order_id: Id<Order>, chef_number: u8) -> Result<()> {
+        use sea_orm::ActiveValue::*;
+
+        entities::order_assigned::ActiveModel {
+            order_id: Set(order_id.into()),
+            chef_number: Set(chef_number as i32),
+            created_at: NotSet,
+        }
+        .insert(&self.con)
+        .await
+        .context("failed to insert assigned order")?;
+
+        Ok(())
     }
 }

@@ -17,5 +17,12 @@ pub trait Repository: Send + 'static {
         group: &Id<OrderGroup>,
     ) -> impl Future<Output = Result<Vec<WaitNumber>>> + Send;
 
+    /// sort required
     fn get_queued_orders(&self) -> impl Future<Output = Result<Vec<(WaitNumber, Order)>>> + Send;
+
+    fn assign_order(
+        &self,
+        order_id: Id<Order>,
+        chef_number: u8,
+    ) -> impl Future<Output = Result<()>> + Send;
 }

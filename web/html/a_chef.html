@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      .chef {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        height: 13vh;
+        font-size: 4vh;
+      }
+      .cbox {
+        width: 30vw;
+        height: 10vh;
+        margin: 1vh 0;
+        border-radius: 2vmin;
+        border: 2px solid #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .container {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        height: 55vh;
+      }
+      .box {
+        width: 30vw;
+        height: 25vh;
+        margin: 1vh 0;
+        border-radius: 2vmin;
+        border: 2px solid #000;
+        justify-content: center;
+        display: flex;
+        align-items: center;
+        background-color: lightblue;
+        font-size: 4vh;
+      }
+      .info {
+        width: 100vw;
+        height: 25vh;
+        font-size: 4vh;
+        margin-left: 1vw;
+      }
+      .info_text {
+        font-size: 3vh;
+      }
+    </style>
+    <title>シェフ側</title>
+  </head>
+  <body>
+    <div class="chef">
+      <div class="cbox" style="background-color: lightsalmon">シェフ1</div>
+      <div class="cbox" style="background-color: lightgreen">シェフ2</div>
+      <div class="cbox" style="background-color: lightpink">シェフ3</div>
+    </div>
+
+    <div class="container">
+      <div class="box">box1<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box2<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box3<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box4<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box5<br />2行目aaaa<br />3行目<br />4行目</div>
+      <div class="box">box6<br />2行目aaaa<br />3行目<br />4行目</div>
+    </div>
+
+    <div class="info">
+      <hr />
+      Information
+      <div id="info_text"></div>
+    </div>
+
+    <script type="text/javascript">
+      const chefBoxElements = document.querySelectorAll(".cbox");
+      const menuBoxElements = document.querySelectorAll(".box");
+      const info = document.getElementById("info_text");
+
+      const chefColors = ["lightsalmon", "lightgreen", "lightpink"];
+      const unassignedColor = "lightblue";
+      const selectedChefColors = [
+        "rgb(253, 98, 36)",
+        "green",
+        "rgb(250, 44, 75)",
+        "rgb(38, 196, 248)",
+      ];
+
+      let num = null;
+      let chef = null;
+      let selectedChef = null;
+      let menu = null;
+      let selectedMenu = null;
+      let chefToMenuMap = [null, null, null];
+      let menuToChefMap = [null, null, null, null, null, null];
+
+      const socket = new WebSocket("ws://localhost:3000/orders/queued_ws");
+      socket.addEventListener("open", () => {
+        console.log("サーバーとの接続に成功しました");
+      });
+      socket.addEventListener("message", (event) => {
+        const msg = JSON.parse(event.data);
+
+        console.log({ msg });
+
+        switch (msg.type) {
+          case "sync":
+            for (let i = 0; i < menuBoxElements.length; i++) {
+              const item = msg.queue[i];
+              if (item == null) {
+              }
+            }
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key == "Enter") {
+          enter();
+          return;
+        }
+
+        if (!("1" <= event.key && event.key <= "9")) {
+          return;
+        }
+
+        if ("1" <= event.key && event.key <= "3") {
+          num = parseInt(event.key) + 2;
+        } else if ("4" <= event.key && event.key <= "6") {
+          num = parseInt(event.key) - 4;
+        } else {
+          num = parseInt(event.key) - 1;
+        }
+
+        if (num >= 6) {
+          selectChef();
+        } else {
+          selectMenu();
+        }
+      });
+
+      function render() {
+        for (let i = 0; i < chefBoxElements.length; i++) {
+          const el = chefBoxElements[i];
+
+          el.style.backgroundColor =
+            selectedChef === i ? selectedChefColors[i] : chefColors[i];
+        }
+
+        for (let i = 0; i < menuBoxElements.length; i++) {
+          const el = menuBoxElements[i];
+          const assignedChefNumber = menuToChefMap[i];
+          const isAssignedChefIsSelected = assignedChefNumber === selectedChef;
+
+          const color = (() => {
+            if (assignedChefNumber == null) {
+              return unassignedColor;
+            }
+            if (isAssignedChefIsSelected) {
+              return selectedChefColors[assignedChefNumber];
+            }
+            return chefColors[assignedChefNumber];
+          })();
+
+          el.style.backgroundColor = color;
+        }
+      }
+
+      function selectChef() {
+        //シェフボタン選択
+        chef = num - 6;
+        num = null;
+
+        if (selectedChef != null) {
+          //前にシェフが選択されてた時選択を消す
+          chefBoxElements[selectedChef].style.backgroundColor =
+            chefColors[selectedChef];
+
+          if (selectedMenu != null) {
+            //料理を選択してた時も選択を消す
+            if (menuToChefMap[selectedMenu] != null) {
+              menuBoxElements[selectedMenu].style.backgroundColor =
+                chefColors[menuToChefMap[selectedMenu]];
+            } else {
+              menuBoxElements[selectedMenu].style.backgroundColor =
+                unassignedColor;
+            }
+            selectedMenu = null;
+          }
+
+          infotext(0);
+
+          if (selectedChef == chef) {
+            //前と同じシェフを選択したら選択解除
+            selectedChef = null;
+            return;
+          }
+
+          selectedChef = null;
+        }
+
+        chefBoxElements[chef].style.backgroundColor = selectedChefColors[chef]; //シェフを選択
+        selectedChef = chef;
+        infotext(1);
+        if (chefToMenuMap[selectedChef] != null) {
+          //選んだシェフが調理中の時
+          menuBoxElements[chefToMenuMap[selectedChef]].style.backgroundColor =
+            selectedChefColors[selectedChef];
+          selectedMenu = chefToMenuMap[selectedChef]; //調理中の料理も選択する
+          infotext(4);
+        }
+        return;
+      }
+
+      function selectMenu() {
+        //料理選択
+        menu = num;
+        num = null;
+
+        //シェフ選択してない時
+        if (selectedChef == null) {
+          infotext(0);
+          return;
+        }
+
+        //シェフが調理中の時
+        if (chefToMenuMap[selectedChef] != null) {
+          infotext(4);
+          return;
+        }
+
+        //選んだ料理が他で調理中の時
+        if (menuToChefMap[menu] != null) {
+          infotext(3);
+          if (selectedMenu != null) {
+            //直前に選んでた料理を選択解除する
+            menuBoxElements[selectedMenu].style.backgroundColor =
+              unassignedColor;
+          }
+          selectedMenu = null;
+        } else {
+          //別の料理選ぶとき
+          if (selectedMenu != null) {
+            //前の料理選択表示を消す
+            menuBoxElements[selectedMenu].style.backgroundColor =
+              unassignedColor;
+          }
+          if (selectedMenu == menu) {
+            //同じ選択したら選択取り消し
+            selectedMenu = null;
+            infotext(1);
+          } else {
+            //次の選択と表示
+            menuBoxElements[menu].style.backgroundColor = selectedChefColors[3];
+            selectedMenu = menu;
+            infotext(2);
+          }
+        }
+        return;
+      }
+
+      //Enterキー押したときの処理
+      function enter() {
+        //シェフが選択されているか
+        if (selectedChef == null) {
+          infotext(0);
+          return;
+        }
+
+        if (selectedMenu == null) {
+          infotext(1);
+          return;
+        }
+
+        // 選択されているシェフが調理中なら調理終了
+        if (chefToMenuMap[selectedChef] != null) {
+          chefToMenuMap[selectedChef] = null;
+          menuToChefMap[selectedMenu] = null;
+
+          // render
+          {
+            chefBoxElements[selectedChef].style.backgroundColor =
+              chefColors[selectedChef];
+            menuBoxElements[selectedMenu].style.backgroundColor =
+              unassignedColor;
+          }
+
+          console.log(
+            "シェフ" +
+              (selectedChef + 1) +
+              "が料理" +
+              (selectedMenu + 1) +
+              "を調理終了"
+          );
+          selectedChef = null;
+          selectedMenu = null;
+          infotext(0);
+          return;
+        }
+
+        // 調理開始
+        chefToMenuMap[selectedChef] = selectedMenu;
+        menuToChefMap[selectedMenu] = selectedChef;
+
+        // render
+        {
+          chefBoxElements[selectedChef].style.backgroundColor =
+            chefColors[selectedChef];
+          menuBoxElements[selectedMenu].style.backgroundColor =
+            chefColors[selectedChef];
+        }
+
+        console.log(
+          "シェフ" +
+            (selectedChef + 1) +
+            "が料理" +
+            (selectedMenu + 1) +
+            "を調理開始"
+        );
+
+        selectedChef = null;
+        selectedMenu = null;
+        infotext(0);
+      }
+
+      function infotext(i) {
+        //informationテキスト
+        switch (i) {
+          case 0:
+            info.innerHTML =
+              ">シェフ番号から選んでね。<br>もう一度押すと選択解除、他のものも選べるよ。";
+            break;
+          case 1:
+            info.innerHTML =
+              ">シェフ" +
+              (selectedChef + 1) +
+              "、作る料理を選んでね。<br>もう一度押すと選択解除、他のものも選べるよ。";
+            break;
+          case 2:
+            info.innerHTML =
+              "シェフ" +
+              (selectedChef + 1) +
+              "、エンターで作る料理を確定してね。<br>もう一度押すと選択解除、他のものも選べるよ。";
+            break;
+          case 3:
+            info.innerHTML =
+              "シェフ" +
+              (selectedChef + 1) +
+              "、それは調理中だから他を選んでね。";
+            break;
+          case 4:
+            info.innerHTML =
+              "シェフ" +
+              (selectedChef + 1) +
+              "、完成したらエンターを押してね。<br>1度に調理できるのはひとつの料理までだよ。";
+            break;
+          default:
+            break;
+        }
+      }
+    </script>
+  </body>
+</html>
