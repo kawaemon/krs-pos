@@ -9,7 +9,9 @@ use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
 use crate::db::Repository;
-use crate::model::{Id, Order, OrderGroup, PayedEvent, PriceTable, WaitNumber};
+use crate::model::{ChefCode, Id, Order, OrderGroup, PayedEvent, PriceTable, WaitNumber};
+
+use super::QueuedOrder;
 
 #[derive(Clone)]
 pub struct SeaOrmRepository {
@@ -157,34 +159,37 @@ impl Repository for SeaOrmRepository {
             .collect())
     }
 
-    async fn get_queued_orders(&self) -> Result<Vec<(WaitNumber, Order)>> {
+    async fn get_queued_orders(&self) -> Result<Vec<QueuedOrder>> {
         let res = sqlx::query!(
-            "select orders.*, order_queued.wait_number as wait_number
+            r#"select
+                orders.*,
+                order_queued.wait_number as wait_number,
+                order_assigned.chef_number as "chef_number?"
             from order_queued
-            left outer join order_ready on order_queued.order_id=order_ready.order_id
-            inner      join orders      on order_queued.order_id=orders.id
+            inner      join orders         on order_queued.order_id=orders.id
+            left outer join order_ready    on order_queued.order_id=order_ready.order_id
+            left outer join order_assigned on order_queued.order_id=order_assigned.order_id
             where order_ready.order_id is null
-            order by orders.created_at"
+            order by orders.created_at"#
         )
         .fetch_all(&self.sqlx)
         .await
         .context("failed to fetch queued (not payed) orders")?
         .into_iter()
-        .map(|x| {
-            (
-                WaitNumber(x.wait_number as u32),
-                Order {
-                    id: x.id.into(),
-                    egg: x.egg,
-                    cheese: x.cheese,
-                    spicy_mayonnaise: x.spicy_mayonnaise,
-                    no_mayonnaise: x.no_mayonnaise,
-                    no_sauce: x.no_sauce,
-                    no_bonito: x.no_bonito,
-                    no_aonori: x.no_aonori,
-                    created_at: x.created_at,
-                },
-            )
+        .map(|x| QueuedOrder {
+            assigned_cheff: x.chef_number.map(|x| ChefCode(x as u8)),
+            wait_number: WaitNumber(x.wait_number as u32),
+            order: Order {
+                id: x.id.into(),
+                egg: x.egg,
+                cheese: x.cheese,
+                spicy_mayonnaise: x.spicy_mayonnaise,
+                no_mayonnaise: x.no_mayonnaise,
+                no_sauce: x.no_sauce,
+                no_bonito: x.no_bonito,
+                no_aonori: x.no_aonori,
+                created_at: x.created_at,
+            },
         })
         .collect();
 

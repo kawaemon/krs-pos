@@ -53,6 +53,8 @@
       const payed = parseInt(params.payed);
       const order_total_num = parseInt(params.price);
 
+      const waitNumberMod = 20;
+
       window.addEventListener("load", () => {
         // 起動時の処理
         document.getElementById("order_total").innerHTML = order_total_num;
@@ -63,7 +65,7 @@
         for (const num of params.nums.split(",")) {
           const p = document.createElement("p");
           p.className = "wait_num";
-          p.innerText = num;
+          p.innerText = (parseInt(num, 10) % waitNumberMod) + 1;
           waitParent.append(p);
         }
       });

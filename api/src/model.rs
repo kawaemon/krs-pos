@@ -140,3 +140,6 @@ pub struct PayedEvent {
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct WaitNumber(pub u32);
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct ChefCode(pub u8);

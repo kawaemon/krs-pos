@@ -34,6 +34,7 @@
         border-radius: 2vmin;
         border: 2px solid #000;
         justify-content: center;
+        flex-direction: column;
         display: flex;
         align-items: center;
         background-color: lightblue;
@@ -79,38 +80,64 @@
       const info = document.getElementById("info_text");
 
       const chefColors = ["lightsalmon", "lightgreen", "lightpink"];
-      const unassignedColor = "lightblue";
       const selectedChefColors = [
         "rgb(253, 98, 36)",
         "green",
         "rgb(250, 44, 75)",
-        "rgb(38, 196, 248)",
       ];
 
-      let num = null;
-      let chef = null;
+      const unassignedColor = "lightblue";
+      const unassignedSelectedColor = "rgb(38, 196, 248)";
+
       let selectedChef = null;
-      let menu = null;
       let selectedMenu = null;
       let chefToMenuMap = [null, null, null];
       let menuToChefMap = [null, null, null, null, null, null];
+      let menuInstance = [null, null, null, null, null, null];
 
-      const socket = new WebSocket("ws://localhost:3000/orders/queued_ws");
+      const HOST = "localhost:3000";
+      const socket = new WebSocket(`ws://${HOST}/orders/queued_ws`);
+      const waitNumberMod = 20;
+
       socket.addEventListener("open", () => {
         console.log("サーバーとの接続に成功しました");
       });
+
       socket.addEventListener("message", (event) => {
         const msg = JSON.parse(event.data);
 
         console.log({ msg });
 
         switch (msg.type) {
-          case "sync":
+          case "sync": {
+            let diff = false;
+
+            menuToChefMap = [null, null, null, null, null, null];
+            chefToMenuMap = [null, null, null];
+
             for (let i = 0; i < menuBoxElements.length; i++) {
               const item = msg.queue[i];
               if (item == null) {
+                break;
+              }
+              if (item.order.id !== menuInstance[i]?.order?.id) {
+                diff = true;
+              }
+
+              menuInstance[i] = item ?? null;
+              menuToChefMap[i] = item.assignedCheff ?? null;
+              if (item.assignedCheff != null) {
+                chefToMenuMap[item.assignedCheff] = i;
               }
             }
+
+            if (diff) {
+              selectedChef = null;
+              selectedMenu = null;
+            }
+
+            render();
+          }
         }
       });
 
@@ -124,6 +151,7 @@
           return;
         }
 
+        let num;
         if ("1" <= event.key && event.key <= "3") {
           num = parseInt(event.key) + 2;
         } else if ("4" <= event.key && event.key <= "6") {
@@ -133,11 +161,37 @@
         }
 
         if (num >= 6) {
-          selectChef();
+          selectChef(num);
         } else {
-          selectMenu();
+          selectMenu(num);
         }
       });
+
+      function formatOrder(o) {
+        if (o == null) {
+          return "-";
+        }
+
+        const toppings = [];
+        const removals = [];
+
+        if (o.order.egg) toppings.push("卵");
+        if (o.order.cheese) toppings.push("チーズ");
+        if (o.order.spicy_mayonnaise) toppings.push("辛マヨ");
+
+        if (o.order.no_mayonnaise) removals.push("マヨ");
+        if (o.order.no_sauce) removals.push("ソース");
+        if (o.order.no_bonito) removals.push("かつお");
+        if (o.order.no_aonori) removals.push("青のり");
+
+        const num = (o.waitNumber % waitNumberMod) + 1;
+        const dn = (a) => (a.length === 0 ? "なし" : a.join(",<wbr>"));
+
+        let html = `#${num}<br>`;
+        html += `<span style="color:green">追加: ${dn(toppings)}</span><br>`;
+        html += `<span style="color:red">抜き: ${dn(removals)}</span><br>`;
+        return html;
+      }
 
       function render() {
         for (let i = 0; i < chefBoxElements.length; i++) {
@@ -154,7 +208,9 @@
 
           const color = (() => {
             if (assignedChefNumber == null) {
-              return unassignedColor;
+              return selectedMenu === i
+                ? unassignedSelectedColor
+                : unassignedColor;
             }
             if (isAssignedChefIsSelected) {
               return selectedChefColors[assignedChefNumber];
@@ -163,112 +219,83 @@
           })();
 
           el.style.backgroundColor = color;
+
+          el.innerHTML = formatOrder(menuInstance[i]);
         }
       }
 
-      function selectChef() {
-        //シェフボタン選択
-        chef = num - 6;
-        num = null;
+      function selectChef(num) {
+        // シェフボタン選択
+        const chef = num - 6;
 
+        // 前にシェフが選択されてた時選択を消す
         if (selectedChef != null) {
-          //前にシェフが選択されてた時選択を消す
-          chefBoxElements[selectedChef].style.backgroundColor =
-            chefColors[selectedChef];
+          const same = selectedChef === chef;
 
-          if (selectedMenu != null) {
-            //料理を選択してた時も選択を消す
-            if (menuToChefMap[selectedMenu] != null) {
-              menuBoxElements[selectedMenu].style.backgroundColor =
-                chefColors[menuToChefMap[selectedMenu]];
-            } else {
-              menuBoxElements[selectedMenu].style.backgroundColor =
-                unassignedColor;
-            }
-            selectedMenu = null;
-          }
+          selectedMenu = null;
+          selectedChef = null;
+          updateInfoText(0);
 
-          infotext(0);
-
-          if (selectedChef == chef) {
-            //前と同じシェフを選択したら選択解除
-            selectedChef = null;
+          if (same) {
+            render();
             return;
           }
-
-          selectedChef = null;
         }
 
-        chefBoxElements[chef].style.backgroundColor = selectedChefColors[chef]; //シェフを選択
         selectedChef = chef;
-        infotext(1);
+        updateInfoText(1);
         if (chefToMenuMap[selectedChef] != null) {
           //選んだシェフが調理中の時
-          menuBoxElements[chefToMenuMap[selectedChef]].style.backgroundColor =
-            selectedChefColors[selectedChef];
           selectedMenu = chefToMenuMap[selectedChef]; //調理中の料理も選択する
-          infotext(4);
+          updateInfoText(4);
         }
-        return;
+
+        render();
       }
 
-      function selectMenu() {
-        //料理選択
-        menu = num;
-        num = null;
-
+      function selectMenu(menu) {
         //シェフ選択してない時
         if (selectedChef == null) {
-          infotext(0);
+          updateInfoText(0);
           return;
         }
 
         //シェフが調理中の時
         if (chefToMenuMap[selectedChef] != null) {
-          infotext(4);
+          updateInfoText(4);
           return;
         }
 
         //選んだ料理が他で調理中の時
         if (menuToChefMap[menu] != null) {
-          infotext(3);
-          if (selectedMenu != null) {
-            //直前に選んでた料理を選択解除する
-            menuBoxElements[selectedMenu].style.backgroundColor =
-              unassignedColor;
-          }
+          updateInfoText(3);
           selectedMenu = null;
         } else {
           //別の料理選ぶとき
-          if (selectedMenu != null) {
-            //前の料理選択表示を消す
-            menuBoxElements[selectedMenu].style.backgroundColor =
-              unassignedColor;
-          }
           if (selectedMenu == menu) {
             //同じ選択したら選択取り消し
             selectedMenu = null;
-            infotext(1);
+            updateInfoText(1);
           } else {
             //次の選択と表示
-            menuBoxElements[menu].style.backgroundColor = selectedChefColors[3];
             selectedMenu = menu;
-            infotext(2);
+            updateInfoText(2);
           }
         }
-        return;
+
+        render();
       }
 
       //Enterキー押したときの処理
       function enter() {
         //シェフが選択されているか
         if (selectedChef == null) {
-          infotext(0);
+          updateInfoText(0);
           return;
         }
 
         if (selectedMenu == null) {
-          infotext(1);
+          updateInfoText(1);
           return;
         }
 
@@ -276,14 +303,6 @@
         if (chefToMenuMap[selectedChef] != null) {
           chefToMenuMap[selectedChef] = null;
           menuToChefMap[selectedMenu] = null;
-
-          // render
-          {
-            chefBoxElements[selectedChef].style.backgroundColor =
-              chefColors[selectedChef];
-            menuBoxElements[selectedMenu].style.backgroundColor =
-              unassignedColor;
-          }
 
           console.log(
             "シェフ" +
@@ -294,21 +313,25 @@
           );
           selectedChef = null;
           selectedMenu = null;
-          infotext(0);
+
+          updateInfoText(0);
+
+          render();
           return;
         }
 
         // 調理開始
-        chefToMenuMap[selectedChef] = selectedMenu;
-        menuToChefMap[selectedMenu] = selectedChef;
+        // chefToMenuMap[selectedChef] = selectedMenu;
+        // menuToChefMap[selectedMenu] = selectedChef;
 
-        // render
-        {
-          chefBoxElements[selectedChef].style.backgroundColor =
-            chefColors[selectedChef];
-          menuBoxElements[selectedMenu].style.backgroundColor =
-            chefColors[selectedChef];
-        }
+        void fetch(
+          `http://${HOST}/order/by-id/${menuInstance[selectedMenu].order.id}/assign`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "Application/json" },
+            body: JSON.stringify({ chefNumber: selectedChef }),
+          }
+        );
 
         console.log(
           "シェフ" +
@@ -320,10 +343,11 @@
 
         selectedChef = null;
         selectedMenu = null;
-        infotext(0);
+        updateInfoText(0);
+        render();
       }
 
-      function infotext(i) {
+      function updateInfoText(i) {
         //informationテキスト
         switch (i) {
           case 0:
