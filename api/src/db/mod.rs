@@ -8,9 +8,9 @@ use crate::model::{ChefCode, Id, Order, OrderGroup, PayedEvent, PriceTable, Wait
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueuedOrder {
-    wait_number: WaitNumber,
-    assigned_cheff: Option<ChefCode>,
-    order: Order,
+    pub wait_number: WaitNumber,
+    pub assigned_cheff: Option<ChefCode>,
+    pub order: Order,
 }
 
 pub trait Repository: Send + 'static {
@@ -35,4 +35,8 @@ pub trait Repository: Send + 'static {
     ) -> impl Future<Output = Result<()>> + Send;
 
     fn order_ready(&self, order_id: Id<Order>) -> impl Future<Output = Result<()>> + Send;
+
+    fn get_ready_orders(&self) -> impl Future<Output = Result<Vec<QueuedOrder>>> + Send;
+
+    fn order_delivered(&self, order_id: Id<Order>) -> impl Future<Output = Result<()>> + Send;
 }

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>注文番号一覧</title>
+  </head>
+  <style>
+    .box {
+      width: 800px;
+      height: 640px;
+      background: gray;
+    }
+    .sizechar {
+      font-size: 150%;
+    }
+  </style>
+  <body>
+    <div style="text-align: center">
+      <h1>注文番号一覧</h1>
+      <div id="container"></div>
+    </div>
+  </body>
+  <script>
+    const waitNumberMod = 20;
+    const HOST = "localhost:3000";
+    const socket = new WebSocket(`ws://${HOST}/orders/ready`);
+    socket.addEventListener("open", () => {
+      console.log("サーバーとの接続に成功しました");
+    });
+    socket.addEventListener("close", () => {
+      window.location.reload();
+    });
+    socket.addEventListener("error", () => {
+      window.location.reload();
+    });
+    setTimeout(
+      () => {
+        window.location.reload();
+      },
+      1000 * 60 * 3
+    );
+
+    socket.addEventListener("message", (event) => {
+      console.log(event.data);
+      const message = JSON.parse(event.data);
+      if (message.type === "sync") {
+        updatecontent(message.calling);
+      }
+    });
+
+    function updatecontent(orders) {
+      const container = document.getElementById("container");
+      while (container.firstChild != null) {
+        container.removeChild(container.firstChild);
+      }
+      for (const order of orders) {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <span id='button1' class='sizechar'>
+            ${(order.waitNumber % waitNumberMod) + 1}
+          </span>
+          <button class='sizechar' onclick='notifyDelivered("${
+            order.order.id
+          }");'>完了</button>,
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function notifyDelivered(id) {
+      void fetch(`http://${HOST}/order/by-id/${id}/delivered`, {
+        method: "POST",
+      });
+    }
+  </script>
+</html>

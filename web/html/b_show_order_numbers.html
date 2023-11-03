@@ -69,7 +69,7 @@
       </ul>
     </section>
     <section class="fi">
-      <h1 class="title">呼び出しの番号</h1>
+      <h1 class="title">呼び出し中の番号</h1>
       <ul id="calling_list" class="bignum light column">
         <li>15</li>
         <li>16</li>
@@ -81,10 +81,23 @@
       <img src="hasimaki.png" width="480" height="400" class="img" />
     </section>
     <script>
-      const socket = new WebSocket("ws://localhost:3000/order/pending_ws");
+      const HOST = "localhost:3000";
+      const socket = new WebSocket(`ws://${HOST}/orders/pending_ws`);
       socket.addEventListener("open", () => {
         console.log("サーバーとの接続に成功しました");
       });
+      socket.addEventListener("close", () => {
+        window.location.reload();
+      });
+      socket.addEventListener("error", () => {
+        window.location.reload();
+      });
+      setTimeout(
+        () => {
+          window.location.reload();
+        },
+        1000 * 60 * 3
+      );
 
       function updatecontent(pending, calling) {
         const pendinglist = document.getElementById("pending_list");
@@ -109,7 +122,7 @@
 
       socket.addEventListener("message", (event) => {
         const message = JSON.parse(event.data);
-        if (message.type == "refresh") {
+        if (message.type == "sync") {
           updatecontent(message.pending, message.calling);
         }
       });

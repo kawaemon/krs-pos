@@ -99,9 +99,22 @@
       const socket = new WebSocket(`ws://${HOST}/orders/queued_ws`);
       const waitNumberMod = 20;
 
+      info.innerText = "サーバーに接続中";
       socket.addEventListener("open", () => {
-        console.log("サーバーとの接続に成功しました");
+        info.innerText = "サーバーとの接続に成功しました";
       });
+      socket.addEventListener("close", () => {
+        window.location.reload();
+      });
+      socket.addEventListener("error", () => {
+        window.location.reload();
+      });
+      setTimeout(
+        () => {
+          window.location.reload();
+        },
+        1000 * 60 * 3
+      );
 
       socket.addEventListener("message", (event) => {
         const msg = JSON.parse(event.data);
@@ -353,7 +366,7 @@
       }
 
       function updateInfoText(i) {
-        //informationテキスト
+        // informationテキスト
         switch (i) {
           case 0:
             info.innerHTML =
