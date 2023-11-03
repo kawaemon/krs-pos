@@ -15,9 +15,10 @@ use axum::{Json, Router};
 use chrono::Utc;
 use config::AppConfig;
 use db::Repository;
-use model::{Order, OrderGroup, PayedEvent, WaitNumber};
+use model::{Order, OrderGroup, PayedEvent, PriceTable, WaitNumber};
 use tokio::sync::broadcast;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
+use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use tracing::info_span;
 use tracing_subscriber::layer::SubscriberExt;
@@ -81,8 +82,12 @@ async fn true_main() {
 
     let app = Router::new()
         .route("/", get(root))
+        .route("/price", get(get_latest_price::<C>).put(replace_price::<C>))
         .route("/orders", post(post_orders::<C>))
-        .route("/orders/by-id/:id/payment", post(pay_order::<C>).delete(cancel_order::<C>))
+        .route(
+            "/orders/by-id/:id/payment",
+            post(pay_order::<C>).delete(cancel_order::<C>),
+        )
         .route("/orders/queued_ws", get(list_queued_orders_ws::<C>))
         .route("/order/by-id/:id/assign", post(assign_order::<C>))
         .route("/order/by-id/:id/ready", post(order_cooking_done::<C>))
@@ -92,6 +97,7 @@ async fn true_main() {
         )
         .route("/orders/ready", get(ready_orders_ws::<C>))
         .route("/order/by-id/:id/delivered", post(delivered::<C>))
+        .nest_service("/web", ServeDir::new("../web/html"))
         .layer(TraceLayer::new_for_http().make_span_with(
             |req: &Request<_>| info_span!("req", method=?req.method(), path=req.uri().to_string()),
         ))
@@ -186,6 +192,50 @@ async fn root() -> &'static str {
     "Hello, World!"
 }
 
+async fn get_latest_price<C: Context>(State(ctx): State<C>) -> Result<Json<PriceTable>, AppError> {
+    let price_table = ctx
+        .repo()
+        .get_latest_price_table()
+        .await
+        .context("failed to get latest price table")?;
+
+    Ok(Json(price_table))
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplacePriceRequest {
+    pub base: u16,
+    pub egg: u16,
+    pub cheese: u16,
+    pub spicy_mayonnaise: u16,
+    pub no_mayonnaise: u16,
+    pub no_sauce: u16,
+    pub no_bonito: u16,
+    pub no_aonori: u16,
+}
+
+async fn replace_price<C: Context>(
+    State(ctx): State<C>,
+    Json(req): Json<ReplacePriceRequest>,
+) -> Result<Json<()>, AppError> {
+    ctx.repo()
+        .insert_price_table(&PriceTable {
+            id: Id::new(),
+            base: req.base,
+            egg: req.egg,
+            cheese: req.cheese,
+            spicy_mayonnaise: req.spicy_mayonnaise,
+            no_mayonnaise: req.no_mayonnaise,
+            no_sauce: req.no_sauce,
+            no_bonito: req.no_bonito,
+            no_aonori: req.no_aonori,
+        })
+        .await?;
+
+    Ok(Json(()))
+}
+
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateOrderRequest {
@@ -261,7 +311,7 @@ async fn post_orders<C: Context>(
 
 async fn cancel_order<C: Context>(
     State(ctx): State<C>,
-    Path(id): Path<Id<OrderGroup>>
+    Path(id): Path<Id<OrderGroup>>,
 ) -> Result<(), AppError> {
     ctx.repo().cancel_order_group(id).await?;
     Ok(())

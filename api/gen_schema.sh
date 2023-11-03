@@ -1,8 +1,8 @@
 #!/bin/bash -exu
 
 pushd ..
-sudo docker compose down
-sudo docker compose up -d
+docker compose down
+docker compose up -d
 popd
 
 sqlx migrate run

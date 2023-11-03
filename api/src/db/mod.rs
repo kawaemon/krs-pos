@@ -15,6 +15,7 @@ pub struct QueuedOrder {
 
 pub trait Repository: Send + 'static {
     fn get_latest_price_table(&self) -> impl Future<Output = Result<PriceTable>> + Send;
+    fn insert_price_table(&self, table: &PriceTable) -> impl Future<Output = Result<()>> + Send;
 
     fn insert_order_group(&self, order: &OrderGroup) -> impl Future<Output = Result<()>> + Send;
     fn cancel_order_group(&self, id: Id<OrderGroup>) -> impl Future<Output = Result<()>> + Send;

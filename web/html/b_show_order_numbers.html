@@ -98,13 +98,13 @@
         () => {
           window.location.reload();
         },
-        1000 * 60 * 3
+        1000 * 60 * 3,
       );
 
       function updatecontent(pending, calling) {
-        pending = pending.map(x => parseInt(x));
+        pending = pending.map((x) => parseInt(x));
         pending.sort((a, b) => a - b);
-        calling = calling.map(x => parseInt(x));
+        calling = calling.map((x) => parseInt(x));
         calling.sort((a, b) => a - b);
 
         const pendinglist = document.getElementById("pending_list");

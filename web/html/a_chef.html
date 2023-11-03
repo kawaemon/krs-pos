@@ -114,7 +114,7 @@
         () => {
           window.location.reload();
         },
-        1000 * 60 * 3
+        1000 * 60 * 3,
       );
 
       socket.addEventListener("message", (event) => {
@@ -320,7 +320,7 @@
             {
               method: "POST",
               headers: { "Content-Type": "Application/json" },
-            }
+            },
           );
 
           console.log(
@@ -328,7 +328,7 @@
               (selectedChef + 1) +
               "が料理" +
               (selectedMenu + 1) +
-              "を調理終了"
+              "を調理終了",
           );
           selectedChef = null;
           selectedMenu = null;
@@ -349,7 +349,7 @@
             method: "POST",
             headers: { "Content-Type": "Application/json" },
             body: JSON.stringify({ chefNumber: selectedChef }),
-          }
+          },
         );
 
         console.log(
@@ -357,7 +357,7 @@
             (selectedChef + 1) +
             "が料理" +
             (selectedMenu + 1) +
-            "を調理開始"
+            "を調理開始",
         );
 
         selectedChef = null;

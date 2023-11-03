@@ -140,8 +140,16 @@
       const order_option = [];
       let items = [];
 
-      // const HOST = "http://localhost:3000";
-      const HOST = "http://privacy:3000";
+      const HOST = "http://localhost:3000";
+      // const HOST = "http://privacy:3000";
+
+      let priceTable;
+
+      void (async () => {
+        const res = await fetch(HOST + "/price");
+        const body = await res.json();
+        priceTable = body;
+      })();
 
       function submit() {
         void (async () => {
@@ -178,20 +186,20 @@
 
       function add() {
         const option_name = [
-          `<div class='order'><span class='indent'>目玉焼き</span><span >+50円×${hasimaki_num}</span></div>`,
-          `<div class='order'><span class='indent'>チーズ</span><span>+50円×${hasimaki_num}</span></div>`,
-          `<div class='order'><span class='indent'>からしマヨネーズ</span><span>+50円×${hasimaki_num}</span></div>`,
-          `<div class='order'><span class='indent'>マヨネーズ抜き</span><span>-0円×${hasimaki_num}</span></div>`,
-          `<div class='order'><span class='indent'>ソース抜き</span><span>-0円×${hasimaki_num}</span></div>`,
-          `<div class='order'><span class='indent'>かつお節抜き</span><span>-0円×${hasimaki_num}</span></div>`,
-          `<div class='order'><span class='indent'>青のり抜き</span><span>-0円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>目玉焼き</span><span >${priceTable.egg}円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>チーズ</span><span>${priceTable.cheese}円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>からしマヨネーズ</span><span>${priceTable.spicyMayonnaise}円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>マヨネーズ抜き</span><span>${priceTable.noMayonnaise}円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>ソース抜き</span><span>${priceTable.noSauce}円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>かつお節抜き</span><span>${priceTable.noBonito}円×${hasimaki_num}</span></div>`,
+          `<div class='order'><span class='indent'>青のり抜き</span><span>${priceTable.noAonori}円×${hasimaki_num}</span></div>`,
         ];
 
         if (hasimaki_num <= 0) {
           return;
         }
 
-        let option_name_total = `<div>箸巻き${hasimaki_num}個</div>`;
+        let option_name_total = `<div class='order'><span>箸巻き${hasimaki_num}個</span> <span>${priceTable.base}円x${hasimaki_num}</span></div>`;
         if (order_times < 5) {
           order_times++;
         }
