@@ -50,15 +50,13 @@
         <td><input type="number" id="noAonori" value="0" />円</td>
       </tr>
     </table>
+    <script src="common.js"></script>
     <script type="text/javascript">
-      const HOST = "http://localhost:3000";
-      // const HOST = "http://privacy:3000";
-
       // prettier-ignore
       const keys = "base,egg,cheese,spicyMayonnaise,noMayonnaise,noSauce,noBonito,noAonori".split(",");
 
       void (async () => {
-        const res = await fetch(HOST + "/price");
+        const res = await fetch("http://" + HOST + "/price");
         const body = await res.json();
         for (const key of keys) {
           document.getElementById(key).value = body[key];
@@ -71,7 +69,7 @@
           for (const key of keys) {
             body[key] = parseInt(document.getElementById(key).value, 10);
           }
-          await fetch(HOST + "/price", {
+          await fetch("http://" + HOST + "/price", {
             method: "PUT",
             headers: { "Content-Type": "Application/json" },
             body: JSON.stringify(body),

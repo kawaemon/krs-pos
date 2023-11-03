@@ -74,6 +74,7 @@
       <div id="info_text"></div>
     </div>
 
+    <script src="common.js"</script></script>
     <script type="text/javascript">
       const chefBoxElements = document.querySelectorAll(".cbox");
       const menuBoxElements = document.querySelectorAll(".box");
@@ -95,10 +96,7 @@
       let menuToChefMap = [null, null, null, null, null, null];
       let menuInstance = [null, null, null, null, null, null];
 
-      // const HOST = "localhost:3000";
-      const HOST = "privacy:3000";
       const socket = new WebSocket(`ws://${HOST}/orders/queued_ws`);
-      const waitNumberMod = 20;
 
       info.innerText = "サーバーに接続中";
       socket.addEventListener("open", () => {

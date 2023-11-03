@@ -124,6 +124,8 @@
         <button id="submit" class="button_big" onclick="submit()">確定</button>
       </div>
     </div>
+    <script src="common.js"></script>
+
     <script>
       let hasimaki_num = 1;
       let order_times = 0;
@@ -140,20 +142,17 @@
       const order_option = [];
       let items = [];
 
-      const HOST = "http://localhost:3000";
-      // const HOST = "http://privacy:3000";
-
       let priceTable;
 
       void (async () => {
-        const res = await fetch(HOST + "/price");
+        const res = await fetch(`http://${HOST}/price`);
         const body = await res.json();
         priceTable = body;
       })();
 
       function submit() {
         void (async () => {
-          const res = await fetch(HOST + "/orders", {
+          const res = await fetch(`http://${HOST}/orders`, {
             method: "POST",
             headers: { "Content-Type": "Application/json" },
             body: JSON.stringify(items),

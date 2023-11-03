@@ -140,6 +140,7 @@
           </button>
         </div>
       </div>
+      <script src="common.js"></script>
       <script>
         const params = new Proxy(new URLSearchParams(window.location.search), {
           get: (searchParams, prop) => searchParams.get(prop),
@@ -148,9 +149,6 @@
         let input_value = 0;
         const order_total_num = parseInt(params.price);
 
-        // const HOST = "http://localhost:3000";
-        const HOST = "http://privacy:3000";
-
         function submit() {
           if (input_value < order_total_num) {
             return;
@@ -158,12 +156,12 @@
 
           void (async () => {
             const res = await fetch(
-              `${HOST}/orders/by-id/${params.groupID}/payment`,
+              `http://${HOST}/orders/by-id/${params.groupID}/payment`,
               {
                 method: "POST",
                 headers: { "Content-Type": "Application/json" },
                 body: JSON.stringify({ payedAmount: input_value }),
-              },
+              }
             );
             const body = await res.json();
             const nums = body.receptNumber.join(",");
@@ -174,11 +172,11 @@
         function cancel() {
           void (async () => {
             const res = await fetch(
-              `${HOST}/orders/by-id/${params.groupID}/payment`,
+              `http://${HOST}/orders/by-id/${params.groupID}/payment`,
               {
                 method: "DELETE",
                 headers: { "Content-Type": "Application/json" },
-              },
+              }
             );
             window.location.href = "./0_topping.html";
           })();

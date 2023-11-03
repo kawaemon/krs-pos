@@ -21,10 +21,8 @@
       <div id="container"></div>
     </div>
   </body>
+  <script src="common.js"></script>
   <script>
-    const waitNumberMod = 20;
-    // const HOST = "localhost:3000";
-    const HOST = "privacy:3000";
     const socket = new WebSocket(`ws://${HOST}/orders/ready`);
     socket.addEventListener("open", () => {
       console.log("サーバーとの接続に成功しました");
@@ -39,7 +37,7 @@
       () => {
         window.location.reload();
       },
-      1000 * 60 * 3,
+      1000 * 60 * 3
     );
 
     socket.addEventListener("message", (event) => {
