@@ -95,7 +95,8 @@
       let menuToChefMap = [null, null, null, null, null, null];
       let menuInstance = [null, null, null, null, null, null];
 
-      const HOST = "localhost:3000";
+      // const HOST = "localhost:3000";
+      const HOST = "1165G7:3000";
       const socket = new WebSocket(`ws://${HOST}/orders/queued_ws`);
       const waitNumberMod = 20;
 
@@ -196,10 +197,10 @@
         const dn = (a) => (a.length === 0 ? "なし" : a.join(",<wbr>"));
 
         const shownid = o.order.id.substring(0, 5);
-        let html = `<span>#${num} <span style="color:gray;font-size:20px">${shownid}</span></span><br>`;
+        let html = `<span>#${num} <span style="color:gray;font-size:20px">${shownid}</span></span>`;
 
-        html += `<span style="color:green">追加: ${dn(toppings)}</span><br>`;
-        html += `<span style="color:red">抜き: ${dn(removals)}</span><br>`;
+        html += `<span style="color:green">追加: ${dn(toppings)}</span>`;
+        html += `<span style="color:red">抜き: ${dn(removals)}</span>`;
         return html;
       }
 
