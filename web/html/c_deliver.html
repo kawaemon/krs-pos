@@ -24,7 +24,7 @@
   <script>
     const waitNumberMod = 20;
     // const HOST = "localhost:3000";
-    const HOST = "1165G7:3000";
+    const HOST = "privacy:3000";
     const socket = new WebSocket(`ws://${HOST}/orders/ready`);
     socket.addEventListener("open", () => {
       console.log("サーバーとの接続に成功しました");

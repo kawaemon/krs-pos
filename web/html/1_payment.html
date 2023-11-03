@@ -32,7 +32,7 @@
         }
 
         .key {
-          height: 150px;
+          height: 120px;
           width: 150px;
           margin: 5px;
           background-color: white;
@@ -135,6 +135,7 @@
             </tr>
           </table>
           <button type="button" class="submit" onclick="submit()">確定</button>
+          <button type="button" class="submit" onclick="cancel()">キャンセル</button>
         </div>
       </div>
       <script>
@@ -146,7 +147,7 @@
         const order_total_num = parseInt(params.price);
 
         // const HOST = "http://localhost:3000";
-        const HOST = "http://1165G7:3000";
+        const HOST = "http://privacy:3000";
 
         function submit() {
           if (input_value < order_total_num) {
@@ -165,6 +166,19 @@
             const body = await res.json();
             const nums = body.receptNumber.join(",");
             window.location.href = `./2_change.html?price=${order_total_num}&payed=${input_value}&nums=${nums}`;
+          })();
+        }
+
+        function cancel() {
+          void (async () => {
+            const res = await fetch(
+              `${HOST}/orders/by-id/${params.groupID}/payment`,
+              {
+                method: "DELETE",
+                headers: { "Content-Type": "Application/json" },
+              }
+            );
+            window.location.href = "./0_topping.html";
           })();
         }
 
