@@ -118,6 +118,23 @@ impl Repository for SeaOrmRepository {
         Ok(())
     }
 
+    async fn cancel_order_group(&self, id: Id<OrderGroup>) -> Result<()> {
+        let id: Uuid = id.into();
+        let res = sqlx::query! ("select * from order_payed where order_group_id=$1",id )
+        .fetch_optional(&self.sqlx)
+        .await
+        .context("failed to assert that not cancelling group is not payed already")?;
+
+        if res.is_some() {
+            anyhow::bail!("tried to cancel group that is already payed");
+        }
+
+        sqlx::query!("delete from orders where group_id=$1", id).execute(&self.sqlx).await.context("failed to delete orders")?;
+        sqlx::query!("delete from orders where id=$1", id).execute(&self.sqlx).await.context("failed to delete group")?;
+
+    Ok(())
+    }
+
     async fn insert_payed_event(&self, event: &PayedEvent) -> Result<()> {
         let PayedEvent {
             payed_amount,

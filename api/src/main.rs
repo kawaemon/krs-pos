@@ -82,7 +82,7 @@ async fn true_main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/orders", post(post_orders::<C>))
-        .route("/orders/by-id/:id/payment", post(pay_order::<C>))
+        .route("/orders/by-id/:id/payment", post(pay_order::<C>).delete(cancel_order::<C>))
         .route("/orders/queued_ws", get(list_queued_orders_ws::<C>))
         .route("/order/by-id/:id/assign", post(assign_order::<C>))
         .route("/order/by-id/:id/ready", post(order_cooking_done::<C>))
@@ -257,6 +257,14 @@ async fn post_orders<C: Context>(
         id: group.id,
         price: group.total_price(),
     }))
+}
+
+async fn cancel_order<C: Context>(
+    State(ctx): State<C>,
+    Path(id): Path<Id<OrderGroup>>
+) -> Result<(), AppError> {
+    ctx.repo().cancel_order_group(id).await?;
+    Ok(())
 }
 
 #[derive(serde::Deserialize)]
