@@ -161,7 +161,7 @@
                 method: "POST",
                 headers: { "Content-Type": "Application/json" },
                 body: JSON.stringify({ payedAmount: input_value }),
-              }
+              },
             );
             const body = await res.json();
             const nums = body.receptNumber.join(",");
@@ -176,7 +176,7 @@
               {
                 method: "DELETE",
                 headers: { "Content-Type": "Application/json" },
-              }
+              },
             );
             window.location.href = "./0_topping.html";
           })();
