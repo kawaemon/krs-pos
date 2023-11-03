@@ -9,7 +9,7 @@
         background: rgb(241, 241, 241);
         border-left: solid 15px rgb(82, 252, 235);
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.33);
-        font-size: 80px;
+        font-size: 60px;
         text-align: center;
         padding: 5px;
         margin: 10px;
@@ -43,7 +43,7 @@
       .img {
         transform: rotate(40deg);
         position: fixed;
-        bottom: 5px;
+        bottom: -50px;
       }
     </style>
   </head>
@@ -80,8 +80,8 @@
       </ul>
       <img src="hasimaki.png" width="480" height="400" class="img" />
     </section>
+    <script src="common.js"></script>
     <script>
-      const HOST = "localhost:3000";
       const socket = new WebSocket(`ws://${HOST}/orders/pending_ws`);
       socket.addEventListener("open", () => {
         console.log("サーバーとの接続に成功しました");
@@ -96,10 +96,15 @@
         () => {
           window.location.reload();
         },
-        1000 * 60 * 3
+        1000 * 60 * 3,
       );
 
       function updatecontent(pending, calling) {
+        pending = pending.map((x) => parseInt(x));
+        pending.sort((a, b) => a - b);
+        calling = calling.map((x) => parseInt(x));
+        calling.sort((a, b) => a - b);
+
         const pendinglist = document.getElementById("pending_list");
         while (pendinglist.firstChild != null) {
           pendinglist.removeChild(pendinglist.firstChild);
@@ -110,12 +115,12 @@
         }
         for (const p of pending) {
           const li = document.createElement("li");
-          li.textContent = p.toString();
+          li.textContent = (parseInt(p.toString()) % waitNumberMod) + 1;
           pendinglist.appendChild(li);
         }
         for (const p of calling) {
           const li = document.createElement("li");
-          li.textContent = p.toString();
+          li.textContent = (parseInt(p.toString()) % waitNumberMod) + 1;
           callinglist.appendChild(li);
         }
       }

@@ -68,6 +68,40 @@ impl Repository for SeaOrmRepository {
         })
     }
 
+    async fn insert_price_table(&self, table: &PriceTable) -> Result<()> {
+        let PriceTable {
+            id,
+            base,
+            egg,
+            cheese,
+            spicy_mayonnaise,
+            no_mayonnaise,
+            no_sauce,
+            no_bonito,
+            no_aonori,
+        } = table.clone();
+
+        use sea_orm::ActiveValue::*;
+
+        entities::price::ActiveModel {
+            id: Set(id.into()),
+            base: Set(base as i32),
+            egg: Set(egg as i32),
+            cheese: Set(cheese as i32),
+            spicy_mayonnaise: Set(spicy_mayonnaise as i32),
+            no_mayonnaise: Set(no_mayonnaise as i32),
+            no_sauce: Set(no_sauce as i32),
+            no_bonito: Set(no_bonito as i32),
+            no_aonori: Set(no_aonori as i32),
+            created_at: NotSet,
+        }
+        .insert(&self.con)
+        .await
+        .context("failed to insert new price table")?;
+
+        Ok(())
+    }
+
     async fn insert_order_group(&self, group: &OrderGroup) -> Result<()> {
         use sea_orm::ActiveValue::*;
 
@@ -115,6 +149,29 @@ impl Repository for SeaOrmRepository {
             .exec(&self.con)
             .await
             .context("failed to insert orders")?;
+        Ok(())
+    }
+
+    async fn cancel_order_group(&self, id: Id<OrderGroup>) -> Result<()> {
+        let id: Uuid = id.into();
+        let res = sqlx::query!("select * from order_payed where order_group_id=$1", id)
+            .fetch_optional(&self.sqlx)
+            .await
+            .context("failed to assert that not cancelling group is not payed already")?;
+
+        if res.is_some() {
+            anyhow::bail!("tried to cancel group that is already payed");
+        }
+
+        sqlx::query!("delete from orders where group_id=$1", id)
+            .execute(&self.sqlx)
+            .await
+            .context("failed to delete orders")?;
+        sqlx::query!("delete from orders where id=$1", id)
+            .execute(&self.sqlx)
+            .await
+            .context("failed to delete group")?;
+
         Ok(())
     }
 

@@ -42,7 +42,8 @@ impl<T> From<Id<T>> for Uuid {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PriceTable {
     pub id: Id<Self>,
 

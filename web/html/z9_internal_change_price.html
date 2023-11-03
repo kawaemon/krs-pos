@@ -7,9 +7,9 @@
   </head>
   <body>
     <style>
-        .sizeb{
-            font-size:200%;
-        }
+      .sizeb {
+        font-size: 200%;
+      }
     </style>
     <h1>商品価格変更</h1>
     <table border="1" width="450">
@@ -19,43 +19,64 @@
       </tr>
       <tr>
         <th>箸巻き</th>
-        <td><input type="number" id="01" name="hashimaki" value="300" />円</td>
+        <td><input type="number" id="base" value="0" />円</td>
       </tr>
       <tr>
         <th>目玉焼き</th>
-        <td><input type="number" id="02" name="medamayaki" value="50" />円</td>
+        <td><input type="number" id="egg" value="0" />円</td>
       </tr>
       <tr>
         <th>チーズ</th>
-        <td><input type="number" id="03" name="cheese" value="50" />円</td>
+        <td><input type="number" id="cheese" value="0" />円</td>
       </tr>
       <tr>
         <th>からしマヨネーズ</th>
-        <td><input type="number" id="04" name="karashimayo" value="50" />円</td>
+        <td><input type="number" id="spicyMayonnaise" value="0" />円</td>
       </tr>
       <tr>
         <th>マヨネーズ抜き</th>
-        <td><input type="number" id="05" name="mayonuki" value="0" />円</td>
+        <td><input type="number" id="noMayonnaise" value="0" />円</td>
       </tr>
       <tr>
         <th>ソース抜き</th>
-        <td><input type="number" id="06" name="so-sunuki" value="0" />円</td>
+        <td><input type="number" id="noSauce" value="0" />円</td>
       </tr>
       <tr>
         <th>かつお節抜き</th>
-        <td>
-          <input type="number" id="07" name="katsuobushinuki" value="0" />円
-        </td>
+        <td><input type="number" id="noBonito" value="0" />円</td>
       </tr>
       <tr>
         <th>青のり抜き</th>
-        <td><input type="number" id="08" name="aonorinuki" value="0" />円</td>
+        <td><input type="number" id="noAonori" value="0" />円</td>
       </tr>
     </table>
+    <script src="common.js"></script>
     <script type="text/javascript">
+      // prettier-ignore
+      const keys = "base,egg,cheese,spicyMayonnaise,noMayonnaise,noSauce,noBonito,noAonori".split(",");
+
+      void (async () => {
+        const res = await fetch("http://" + HOST + "/price");
+        const body = await res.json();
+        for (const key of keys) {
+          document.getElementById(key).value = body[key];
+        }
+      })();
+
       function change() {
-        document.getElementById("change").innerHTML =
-          "&#10003変更を保存しました";
+        void (async () => {
+          const body = {};
+          for (const key of keys) {
+            body[key] = parseInt(document.getElementById(key).value, 10);
+          }
+          await fetch("http://" + HOST + "/price", {
+            method: "PUT",
+            headers: { "Content-Type": "Application/json" },
+            body: JSON.stringify(body),
+          });
+          document.getElementById("change").innerHTML =
+            "&#10003変更を保存しました";
+        })();
       }
     </script>
     <input type="button" class="sizeb" value="変更する" onclick="change()" />

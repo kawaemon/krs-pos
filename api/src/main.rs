@@ -2,6 +2,7 @@ mod config;
 mod db;
 mod model;
 
+use std::future::Future;
 use std::time::Duration;
 
 use anyhow::{Context as _, Result};
@@ -14,9 +15,10 @@ use axum::{Json, Router};
 use chrono::Utc;
 use config::AppConfig;
 use db::Repository;
-use model::{Order, OrderGroup, PayedEvent, WaitNumber};
+use model::{Order, OrderGroup, PayedEvent, PriceTable, WaitNumber};
 use tokio::sync::broadcast;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
+use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use tracing::info_span;
 use tracing_subscriber::layer::SubscriberExt;
@@ -80,8 +82,12 @@ async fn true_main() {
 
     let app = Router::new()
         .route("/", get(root))
+        .route("/price", get(get_latest_price::<C>).put(replace_price::<C>))
         .route("/orders", post(post_orders::<C>))
-        .route("/orders/by-id/:id/payment", post(pay_order::<C>))
+        .route(
+            "/orders/by-id/:id/payment",
+            post(pay_order::<C>).delete(cancel_order::<C>),
+        )
         .route("/orders/queued_ws", get(list_queued_orders_ws::<C>))
         .route("/order/by-id/:id/assign", post(assign_order::<C>))
         .route("/order/by-id/:id/ready", post(order_cooking_done::<C>))
@@ -91,6 +97,7 @@ async fn true_main() {
         )
         .route("/orders/ready", get(ready_orders_ws::<C>))
         .route("/order/by-id/:id/delivered", post(delivered::<C>))
+        .nest_service("/web", ServeDir::new("../web/html"))
         .layer(TraceLayer::new_for_http().make_span_with(
             |req: &Request<_>| info_span!("req", method=?req.method(), path=req.uri().to_string()),
         ))
@@ -134,6 +141,14 @@ trait Context: Send + Sync + 'static {
     }
 }
 
+#[derive(Debug)]
+enum Trigger {
+    Order,
+    Assign,
+    Cooked,
+    Delivered,
+}
+
 #[derive(Clone)]
 struct MyContext<R> {
     repo: R,
@@ -175,6 +190,50 @@ impl IntoResponse for AppError {
 
 async fn root() -> &'static str {
     "Hello, World!"
+}
+
+async fn get_latest_price<C: Context>(State(ctx): State<C>) -> Result<Json<PriceTable>, AppError> {
+    let price_table = ctx
+        .repo()
+        .get_latest_price_table()
+        .await
+        .context("failed to get latest price table")?;
+
+    Ok(Json(price_table))
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplacePriceRequest {
+    pub base: u16,
+    pub egg: u16,
+    pub cheese: u16,
+    pub spicy_mayonnaise: u16,
+    pub no_mayonnaise: u16,
+    pub no_sauce: u16,
+    pub no_bonito: u16,
+    pub no_aonori: u16,
+}
+
+async fn replace_price<C: Context>(
+    State(ctx): State<C>,
+    Json(req): Json<ReplacePriceRequest>,
+) -> Result<Json<()>, AppError> {
+    ctx.repo()
+        .insert_price_table(&PriceTable {
+            id: Id::new(),
+            base: req.base,
+            egg: req.egg,
+            cheese: req.cheese,
+            spicy_mayonnaise: req.spicy_mayonnaise,
+            no_mayonnaise: req.no_mayonnaise,
+            no_sauce: req.no_sauce,
+            no_bonito: req.no_bonito,
+            no_aonori: req.no_aonori,
+        })
+        .await?;
+
+    Ok(Json(()))
 }
 
 #[derive(serde::Deserialize)]
@@ -250,6 +309,14 @@ async fn post_orders<C: Context>(
     }))
 }
 
+async fn cancel_order<C: Context>(
+    State(ctx): State<C>,
+    Path(id): Path<Id<OrderGroup>>,
+) -> Result<(), AppError> {
+    ctx.repo().cancel_order_group(id).await?;
+    Ok(())
+}
+
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PayRequest {
@@ -291,88 +358,34 @@ async fn list_queued_orders_ws<C: Context>(
     wsu: WebSocketUpgrade,
     State(ctx): State<C>,
 ) -> impl IntoResponse {
-    return wsu.on_upgrade(|ws| async move {
-        if let Err(e) = handle_socket(ctx, ws).await {
-            tracing::error!("websocket error: {e:#?}");
-        }
-    });
+    return handle_ws(wsu, ctx, SyncerImpl).await;
 
-    async fn handle_socket(ctx: impl Context, mut ws: WebSocket) -> Result<()> {
-        let mut interval = tokio::time::interval(Duration::from_secs(10));
-        let mut order = ctx.order_queue_subscriber();
-        let mut assign = ctx.assign_subscriber();
-        let mut cooked = ctx.cooking_done_subscriber();
+    struct SyncerImpl;
+    impl<C: Context> Syncer<C> for SyncerImpl {
+        type Res = serde_json::Value;
 
-        const PING_MAGIC: &[u8] = &[0x07, 0x08];
-
-        loop {
+        async fn wait(&self, ctx: &C) -> Trigger {
+            let mut order = ctx.order_queue_subscriber();
+            let mut assign = ctx.assign_subscriber();
+            let mut cooked = ctx.cooking_done_subscriber();
             tokio::select! {
-                _ = interval.tick() => {
-                    tracing::debug!("syncing due to interval");
-                    sync(&ctx, &mut ws).await?
-                }
-                _ = order.recv() => {
-                    tracing::debug!("syncing due to new order event");
-                    sync(&ctx, &mut ws).await?
-                }
-                _ = assign.recv() => {
-                    tracing::debug!("syncing due to assigned event");
-                    sync(&ctx, &mut ws).await?
-                }
-                _ = cooked.recv() => {
-                    tracing::debug!("syncing due to cook done");
-                    sync(&ctx, &mut ws).await?
-                }
-
-                msg = ws.recv() => {
-                    let Some(msg) = msg else {
-                        return Ok(());
-                    };
-
-                    let msg = msg.context("failed to decode message")?;
-
-                    match msg {
-                        ws::Message::Pong(m) => {
-                            if m != PING_MAGIC {
-                                tracing::warn!("unknown pong magic: {PING_MAGIC:?}");
-                            }
-                            continue;
-                        }
-
-                        // doc says
-                        // > Ping messages will be automatically responded to by the server, so you do not have to worry
-                        // > about dealing with them yourself.
-                        ws::Message::Ping(_) => continue,
-
-                        ws::Message::Close(_) => return Ok(()),
-                        _ => continue,
-                    };
-                }
+                _ = order.recv() => Trigger::Order,
+                _ = assign.recv() => Trigger::Assign,
+                _ = cooked.recv() => Trigger::Cooked,
             }
         }
 
-        async fn sync(ctx: &impl Context, ws: &mut WebSocket) -> Result<()> {
-            ws.send(ws::Message::Ping(PING_MAGIC.to_vec()))
-                .await
-                .context("failed to send ping message")?;
-
+        async fn sync(&self, ctx: &C) -> Result<Self::Res> {
             let queue = ctx
                 .repo()
                 .get_queued_orders()
                 .await
                 .context("failed to get queued orders")?;
 
-            let d = serde_json::json! {{
+            Ok(serde_json::json! {{
                 "type": "sync",
                 "queue": queue,
-            }};
-
-            let d = serde_json::to_string(&d).context("failed to serialize queue")?;
-
-            ws.send(ws::Message::Text(d))
-                .await
-                .context("failed to sync queued orders with client")?;
-            Ok(())
+            }})
         }
     }
 }
@@ -419,71 +432,24 @@ async fn list_pending_and_ready_orders_ws<C: Context>(
     wsu: WebSocketUpgrade,
     State(ctx): State<C>,
 ) -> impl IntoResponse {
-    return wsu.on_upgrade(|ws| async move {
-        if let Err(e) = handle_socket(ctx, ws).await {
-            tracing::error!("websocket error: {e:#?}");
-        }
-    });
+    return handle_ws(wsu, ctx, SyncerImpl).await;
 
-    async fn handle_socket(ctx: impl Context, mut ws: WebSocket) -> Result<()> {
-        let mut interval = tokio::time::interval(Duration::from_secs(10));
-        let mut order = ctx.order_queue_subscriber();
-        let mut cooked = ctx.cooking_done_subscriber();
-        let mut delivered = ctx.delivered_subscriber();
+    struct SyncerImpl;
+    impl<C: Context> Syncer<C> for SyncerImpl {
+        type Res = serde_json::Value;
 
-        const PING_MAGIC: &[u8] = &[0x07, 0x08];
-
-        loop {
+        async fn wait(&self, ctx: &C) -> Trigger {
+            let mut order = ctx.order_queue_subscriber();
+            let mut cooked = ctx.cooking_done_subscriber();
+            let mut delivered = ctx.delivered_subscriber();
             tokio::select! {
-                _ = interval.tick() => {
-                    tracing::debug!("syncing due to interval");
-                    sync(&ctx, &mut ws).await?
-                }
-                _ = order.recv() => {
-                    tracing::debug!("syncing due to new order event");
-                    sync(&ctx, &mut ws).await?
-                }
-                _ = cooked.recv() => {
-                    tracing::debug!("syncing due to cook done");
-                    sync(&ctx, &mut ws).await?
-                }
-                _ = delivered.recv() => {
-                    tracing::debug!("syncing due to deliver");
-                    sync(&ctx, &mut ws).await?
-                }
-
-                msg = ws.recv() => {
-                    let Some(msg) = msg else {
-                        return Ok(());
-                    };
-
-                    let msg = msg.context("failed to decode message")?;
-
-                    match msg {
-                        ws::Message::Pong(m) => {
-                            if m != PING_MAGIC {
-                                tracing::warn!("unknown pong magic: {PING_MAGIC:?}");
-                            }
-                            continue;
-                        }
-
-                        // doc says
-                        // > Ping messages will be automatically responded to by the server, so you do not have to worry
-                        // > about dealing with them yourself.
-                        ws::Message::Ping(_) => continue,
-
-                        ws::Message::Close(_) => return Ok(()),
-                        _ => continue,
-                    };
-                }
+                _ = order.recv() => Trigger::Order,
+                _ = cooked.recv() => Trigger::Cooked,
+                _ = delivered.recv() => Trigger::Delivered,
             }
         }
 
-        async fn sync(ctx: &impl Context, ws: &mut WebSocket) -> Result<()> {
-            ws.send(ws::Message::Ping(PING_MAGIC.to_vec()))
-                .await
-                .context("failed to send ping message")?;
-
+        async fn sync(&self, ctx: &C) -> Result<Self::Res> {
             let mut queued = ctx
                 .repo()
                 .get_queued_orders()
@@ -504,18 +470,11 @@ async fn list_pending_and_ready_orders_ws<C: Context>(
                 .collect::<Vec<_>>();
             ready.sort_unstable_by_key(|x| x.0);
 
-            let d = serde_json::json! {{
+            Ok(serde_json::json! {{
                 "type": "sync",
                 "pending": queued,
                 "calling": ready,
-            }};
-
-            let d = serde_json::to_string(&d).context("failed to serialize queue")?;
-
-            ws.send(ws::Message::Text(d))
-                .await
-                .context("failed to sync queued orders with client")?;
-            Ok(())
+            }})
         }
     }
 }
@@ -524,16 +483,76 @@ async fn ready_orders_ws<C: Context>(
     wsu: WebSocketUpgrade,
     State(ctx): State<C>,
 ) -> impl IntoResponse {
+    return handle_ws(wsu, ctx, SyncerImpl).await;
+
+    struct SyncerImpl;
+    impl<C: Context> Syncer<C> for SyncerImpl {
+        type Res = serde_json::Value;
+
+        async fn wait(&self, ctx: &C) -> Trigger {
+            let mut cooked = ctx.cooking_done_subscriber();
+            let mut delivered = ctx.delivered_subscriber();
+            tokio::select! {
+                _ = cooked.recv() => Trigger::Cooked,
+                _ = delivered.recv() => Trigger::Delivered,
+            }
+        }
+
+        async fn sync(&self, ctx: &C) -> Result<Self::Res> {
+            let ready = ctx
+                .repo()
+                .get_ready_orders()
+                .await
+                .context("failed to get ready orders")?;
+
+            Ok(serde_json::json! {{
+                "type": "sync",
+                "calling": ready,
+            }})
+        }
+    }
+}
+
+async fn delivered<C: Context>(
+    State(ctx): State<C>,
+    Path(order_id): Path<Id<Order>>,
+) -> Result<(), AppError> {
+    ctx.repo()
+        .order_delivered(order_id)
+        .await
+        .context("failed to mark order delivered")?;
+
+    ctx.delivered_sender()
+        .send(())
+        .context("failed to notify ordered event")?;
+
+    Ok(())
+}
+
+trait Syncer<C: Context>: Send + Sync + 'static {
+    type Res: serde::Serialize + Send + Sync + 'static;
+
+    fn wait(&self, ctx: &C) -> impl Future<Output = Trigger> + Send;
+    fn sync(&self, ctx: &C) -> impl Future<Output = Result<Self::Res>> + Send;
+}
+
+async fn handle_ws<C: Context>(
+    wsu: WebSocketUpgrade,
+    ctx: C,
+    syncer: impl Syncer<C>,
+) -> impl IntoResponse {
     return wsu.on_upgrade(|ws| async move {
-        if let Err(e) = handle_socket(ctx, ws).await {
+        if let Err(e) = handle_socket(ctx, syncer, ws).await {
             tracing::error!("websocket error: {e:#?}");
         }
     });
 
-    async fn handle_socket(ctx: impl Context, mut ws: WebSocket) -> Result<()> {
+    async fn handle_socket<C: Context>(
+        ctx: C,
+        syncer: impl Syncer<C>,
+        mut ws: WebSocket,
+    ) -> Result<()> {
         let mut interval = tokio::time::interval(Duration::from_secs(10));
-        let mut cooked = ctx.cooking_done_subscriber();
-        let mut delivered = ctx.delivered_subscriber();
 
         const PING_MAGIC: &[u8] = &[0x07, 0x08];
 
@@ -541,15 +560,11 @@ async fn ready_orders_ws<C: Context>(
             tokio::select! {
                 _ = interval.tick() => {
                     tracing::debug!("syncing due to interval");
-                    sync(&ctx, &mut ws).await?
+                    sync(&ctx, &syncer, &mut ws).await?
                 }
-                _ = cooked.recv() => {
-                    tracing::debug!("syncing due to cook done");
-                    sync(&ctx, &mut ws).await?
-                }
-                _ = delivered.recv() => {
-                    tracing::debug!("syncing due to deliver");
-                    sync(&ctx, &mut ws).await?
+                _ = syncer.wait(&ctx) => {
+                    tracing::debug!("syncing due to manual trigger");
+                    sync(&ctx, &syncer, &mut ws).await?
                 }
 
                 msg = ws.recv() => {
@@ -579,23 +594,17 @@ async fn ready_orders_ws<C: Context>(
             }
         }
 
-        async fn sync(ctx: &impl Context, ws: &mut WebSocket) -> Result<()> {
+        async fn sync<C: Context>(
+            ctx: &C,
+            syncer: &impl Syncer<C>,
+            ws: &mut WebSocket,
+        ) -> Result<()> {
             ws.send(ws::Message::Ping(PING_MAGIC.to_vec()))
                 .await
                 .context("failed to send ping message")?;
 
-            let ready = ctx
-                .repo()
-                .get_ready_orders()
-                .await
-                .context("failed to get ready orders")?;
-
-            let d = serde_json::json! {{
-                "type": "sync",
-                "calling": ready,
-            }};
-
-            let d = serde_json::to_string(&d).context("failed to serialize queue")?;
+            let d = syncer.sync(ctx).await?;
+            let d = serde_json::to_string(&d).context("failed to serialize sync response")?;
 
             ws.send(ws::Message::Text(d))
                 .await
@@ -604,24 +613,3 @@ async fn ready_orders_ws<C: Context>(
         }
     }
 }
-
-async fn delivered<C: Context>(
-    State(ctx): State<C>,
-    Path(order_id): Path<Id<Order>>,
-) -> Result<(), AppError> {
-    ctx.repo()
-        .order_delivered(order_id)
-        .await
-        .context("failed to mark order delivered")?;
-
-    ctx.delivered_sender()
-        .send(())
-        .context("failed to notify ordered event")?;
-
-    Ok(())
-}
-
-// 生産完了POST
-// 呼び出し番号GET ws <- 生産完了 subscribe
-// 呼び出し番号DELETE
-// 待ち番号と呼び出し番号

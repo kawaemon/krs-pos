@@ -74,6 +74,7 @@
       <div id="info_text"></div>
     </div>
 
+    <script src="common.js"></script>
     <script type="text/javascript">
       const chefBoxElements = document.querySelectorAll(".cbox");
       const menuBoxElements = document.querySelectorAll(".box");
@@ -95,9 +96,7 @@
       let menuToChefMap = [null, null, null, null, null, null];
       let menuInstance = [null, null, null, null, null, null];
 
-      const HOST = "localhost:3000";
       const socket = new WebSocket(`ws://${HOST}/orders/queued_ws`);
-      const waitNumberMod = 20;
 
       info.innerText = "サーバーに接続中";
       socket.addEventListener("open", () => {
@@ -113,7 +112,7 @@
         () => {
           window.location.reload();
         },
-        1000 * 60 * 3
+        1000 * 60 * 3,
       );
 
       socket.addEventListener("message", (event) => {
@@ -196,10 +195,10 @@
         const dn = (a) => (a.length === 0 ? "なし" : a.join(",<wbr>"));
 
         const shownid = o.order.id.substring(0, 5);
-        let html = `<span>#${num} <span style="color:gray;font-size:20px">${shownid}</span></span><br>`;
+        let html = `<span>#${num} <span style="color:gray;font-size:20px">${shownid}</span></span>`;
 
-        html += `<span style="color:green">追加: ${dn(toppings)}</span><br>`;
-        html += `<span style="color:red">抜き: ${dn(removals)}</span><br>`;
+        html += `<span style="color:green">追加: ${dn(toppings)}</span>`;
+        html += `<span style="color:red">抜き: ${dn(removals)}</span>`;
         return html;
       }
 
@@ -319,7 +318,7 @@
             {
               method: "POST",
               headers: { "Content-Type": "Application/json" },
-            }
+            },
           );
 
           console.log(
@@ -327,7 +326,7 @@
               (selectedChef + 1) +
               "が料理" +
               (selectedMenu + 1) +
-              "を調理終了"
+              "を調理終了",
           );
           selectedChef = null;
           selectedMenu = null;
@@ -348,7 +347,7 @@
             method: "POST",
             headers: { "Content-Type": "Application/json" },
             body: JSON.stringify({ chefNumber: selectedChef }),
-          }
+          },
         );
 
         console.log(
@@ -356,7 +355,7 @@
             (selectedChef + 1) +
             "が料理" +
             (selectedMenu + 1) +
-            "を調理開始"
+            "を調理開始",
         );
 
         selectedChef = null;
