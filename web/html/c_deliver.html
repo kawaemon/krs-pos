@@ -44,6 +44,7 @@
       console.log(event.data);
       const message = JSON.parse(event.data);
       if (message.type === "sync") {
+        message.calling.sort((a, b) => parseInt(a.waitNumber) - parseInt(b.waitNumber));
         updatecontent(message.calling);
       }
     });
